@@ -1,2 +1,2 @@
 # adf_d256_parse
-parses fixed with Draft 256 and ADF files.
+parses fixed width Draft 256 and ADF files.
