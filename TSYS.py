@@ -844,7 +844,7 @@ class TransmissionHeaderRecord(Record):
 		"reserved13": None
                 }
 
-    LENGTH = 900
+    LENGTH = 127
 
     def __init__(self,f):
         self.recordType, self.versionNumber, self.destinationID, self.fileType, self.fileFrequency, self.processingYear, self.processingMonth, self.processingWeek, self.processingDay, self.processingEndHour, self.fileReferenceID, self.fileCreationDateTime, self.reserved12, self.reserved13 = (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
