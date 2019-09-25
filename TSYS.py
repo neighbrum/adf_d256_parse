@@ -7,9 +7,6 @@ class Record:
     def __init__(self):
         pass
 
-
-
-
 class TransmissionHeader(Record):
 	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe sequence number for the transmission \r\nheader must be 0000001. For more \r\ninformation about sequence numbers, see \r\nSequence numbers on page 55.'),
 			('2', '8-11', '4', 'N', 'TSYS Acquiring Solutions', 'Transaction Code\r\nRequired value  9010'),
