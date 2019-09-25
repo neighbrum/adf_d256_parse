@@ -1,11 +1,148 @@
+import types
+import re
+
 NegativeAmounts = {'}': 0, 'J': 1, 'K': 2, 'L': 3, 'M': 4, 'N': 5, 'O': 6, 'P': 7, 'Q': 8, 'R': 9}
 DataTypes = {'A': r'[a-zA-Z]+', 'AN': r'[a-zA-Z0-9 ]+', 'S': r' +', 'N': '\d+', 'PN': r'.{2}'} #NOTE: TSYS may use more than 2 bytes for PN...
 UserAbbreviations = {'All': 'All associations and TSYS Acquiring Solutions', 'X': 'American Express®', 'CAPN': 'American Express Card Acceptance Processing Network®', 'D': 'Diners Club®', 'S': 'Discover®', 'E': 'Europay®', 'JCB': 'Japanese Credit Bureau®', 'M': 'MasterCard®', 'P': 'Private label', 'V': 'Visa®', 'V-UK': 'Visa United Kingdom®', 'V-EU': 'Visa European Union®', 'TSYS Acquiring Solutions': 'TSYS Acquiring Solutions'}
 NetworkIDs = {'XL': 'Accel®', 'AF': 'Armed Forces Financial Network (AFFN)', 'AL': 'Alert®', 'AV': 'Avail®', 'BM': 'Bankmate®', 'CA': 'Cactus®', 'CS': 'Cash Station®', 'CU': 'Credit Union 24 (CU24)', 'EB': 'EBT® (Electronic Benefits Transfer)', 'EV': 'Evertec', 'EH': 'The Exchange®', 'DB': 'Generic debit', 'GF': 'Gulfnet®', 'HO': 'Honor®', 'IT': 'Instant Teller®', 'IL': 'Interlink®', 'JE': 'Jeanie®', 'MA': 'Mac®', 'ME': 'Maestro®', 'ML': 'Magicline®', 'MS': 'Money Station®', 'MO': 'Most®', 'IM': 'Mpact®', 'NY': 'NYCE®', 'PL': 'Pulse®', 'QU': 'Quest®', 'S': 'Shaam®', 'ST': 'Star (Explore)®', 'TY': 'Tyme®', 'VI': 'Visa®', 'C2': 'Visa Checkcard II®', 'YN': 'Yankee 24®'}
 
+
+class Restrict:
+	_str = ""
+
+	def __init__(self, value):
+		self.value = value
+		self.successful = True
+		Restrict.str = ""
+
+	def AND(self):
+		if not self.successful:
+			return self
+		return self
+	
+	def OR(self):
+		if not self.successful:
+			self.successful = True
+		return self
+	
+	def hasFailed(self):
+		return not self.successful
+
+	def toBe(self, cmp):
+		if not self.successful:
+			return self
+		Restrict.str = f'restrict {self.value} to be {cmp}'
+		expr = False
+		try:
+			expr = (self.value is cmp)
+		except Exception:
+			Restrict.str += " exception caught in Restrict::toBe"
+			self.successful = False
+			return self
+		self.successful = True if expr else False
+		return self
+
+	def toEqual(self, cmp):
+		if not self.successful:
+			return self
+		Restrict.str = f'restrict {self.value} to equal {cmp}'
+		expr = False
+		try:
+			expr = (self.value == cmp)
+		except Exception:
+			Restrict.str += " exception caught in Restrict::toEqual"
+			return self
+		self.successful = True if expr else False
+		return self
+
+	def toBeIn(self, iteratable, key=None):
+		if not self.successful:
+			return self
+		iter_str = str(iteratable[0:10])
+		if len(iteratable[0:10]) > 11:
+			iter_str = iter_str[:-1] + "..." 
+		Restrict.str = f'restrict {self.value} to be in {iter_str}'
+		elements = iteratable
+		if isinstance(key, types.LambdaType):
+			try:
+				elements = map(key, iteratable)
+			except ValueError:
+				Restrict.str += " ValueError exception in Restrict::toBeIn"
+				self.successful = False
+				#raise StopIteration("Restrict::toBeIn key could not be applied")
+		self.successful = True if self.value in elements else False
+		return self
+	
+	def toBeDate(self):
+		if not self.successful:
+			return self
+		self.toMatch(r"^[0-9]{6}$")
+		Restrict.str = f'restrict {self.value} to be a date'
+		return self
+
+	def toBeDayOfYear(self):
+		if not self.successful:
+			return self
+		self.toMatch(r"^[0-9]{3}$")
+		Restrict.str = f'restrict {self.value} to be a day of year'
+		return self
+	
+	def toBeLeftAligned(self, fillWith=r'\s'):
+		if not self.successful:
+			return self
+		self.toMatch(re.compile(r"^[^"+fillWith+r"]*["+fillWith+r"]*$"))
+		Restrict.str = f'restrict {self.value} to be left aligned and "{fillWith}" filled'
+		return self
+
+	def toBeRightAligned(self, fillWith=r'\s'):
+		if not self.successful:
+			return self
+		self.toMatch(re.compile(r"^["+fillWith+r"]*[^"+fillWith+r"]*$"))
+		Restrict.str = f'restrict {self.value} to be right aligned and "{fillWith}" filled'
+		return self
+	
+	def haveADigit(self):
+		if not self.successful:
+			return self
+		re.compile(r".*\d.*").match(self.value)
+		Restrict.str = f'restrict {self.value} to have atleast one digit'
+		return self
+	
+	def haveCharAt(self, char, index):
+		if not self.successful:
+			return self
+		Restrict.str = f'restrict {self.value} to have {char} at index {index}'
+		if len(self.value) > index:
+			Restrict.str += " IndexError caught in Restrict::haveCharAt"
+			raise IndexError
+		self.successful =  True if self.value[index] == char else False
+		return self
+
+	def toMatch(self, regex):
+		if not self.successful:
+			return self
+		Restrict.str = f'restrict {self.value} by exactly matching {str(regex)}'
+		self.successful = True if re.compile(regex).match(self.value) else False 
+		return self
+
+def restrict(value):
+	return Restrict(value)
+
 class Record:
-    def __init__(self):
-        pass
+	def __init__(self):
+		identifiers = list(self.restrictions.keys())
+		for i in range(0,len(self.restrictions)):
+			identifier = identifiers[i]
+			index = min(map(int,self.__class__.AT(i, 1).split("-"))) - 1
+			end = index + int(self.__class__.AT(i,2))
+			self.__dict__[identifier] = self.data[index:end]
+		for identifier, restriction in self.restrictions.items():
+			if restriction:
+				restriction(self.__dict__[identifier])
+				if(restriction(self.__dict__[identifier]).hasFailed()):
+					raise ValueError(f'Failed to restrict {identifier} in {self.__class__.__name__} Record \n\t rule--> {Restrict.str}')
+		
+
 
 class TransmissionHeader(Record):
 	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe sequence number for the transmission \r\nheader must be 0000001. For more \r\ninformation about sequence numbers, see \r\nSequence numbers on page 55.'),
@@ -39,14 +176,14 @@ class TransmissionHeader(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
-		"transactionCode": None,
+		"sequenceNumber": lambda value: restrict(value).toEqual("0000001"),
+		"transactionCode": lambda value: restrict(value).toEqual("9010"),
 		"transmitBankNumber": None,
 		"userAssignedTransmissionNumber": None,
 		"transmissionNameIdentification": None,
 		"userSecurityPassword": None,
-		"transmissionDateJulian": None,
-		"transmissionDateGregorian": None,
+		"transmissionDateJulian": lambda value: restrict(value).toBeDayOfYear(),
+		"transmissionDateGregorian": lambda value: restrict(value).toBeDate(),
 		"transmissionDescriptionCode": None,
 		"preProcessFlag": None,
 		"vendorIdentifierExpansion": None,
@@ -54,15 +191,15 @@ class TransmissionHeader(Record):
 		"multiCurrencyCurrencyCode": None,
 		"reservedForFutureUse14": None,
 		"reservedForFutureUse15": None,
-		"eccbQualificationFlag": None,
+		"eccbQualificationFlag": lambda value: restrict(value).toEqual(" "),
 		"vendorIdentifier": None,
 		"mailboxTransmissionIdentifier": None,
 		"mailboxBatchNumber": None,
 		"mailboxTransmissionDate": None,
 		"mailboxTransmissionTime": None,
 		"reservedForFutureUse22": None,
-		"byteTransmissionIdentifierFlag256": None,
-		"expandedTrailerAmountsIndicator": None,
+		"byteTransmissionIdentifierFlag256": lambda value: restrict(value).toBeIn(" NY"), #this field sets the record length, forces other records to be 2 128 byte fields
+		"expandedTrailerAmountsIndicator": lambda value: restrict(value).toBeIn("NY"),
 		"reservedForFutureUse25": None
 	}
 
@@ -141,42 +278,42 @@ class MerchantHeader(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
-		"transactionCode": None,
-		"merchantAccountNumber": None,
-		"beginningTransactionReferenceNumber": None,
-		"netDepositAmount": None,
-		"totalAmountOfDiscount": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
+		"transactionCode": lambda value: restrict(value).toBeIn(["9104","9107","9019"]),
+		"merchantAccountNumber": lambda value: restrict(value).toBeLeftAligned(),
+		"beginningTransactionReferenceNumber": lambda value: restrict(value).toBeRightAligned(r"0").AND().haveADigit(),
+		"netDepositAmount": lambda value: restrict(value).toBeRightAligned(r"0"),
+		"totalAmountOfDiscount": lambda value: restrict(value).toBeRightAligned(r"0"),
 		"batchItemSRetentionLocation": None,
-		"largeTicketIndicator": None,
-		"posPointOfSaleInteractionTerminal9": None,
+		"largeTicketIndicator": lambda value: restrict(value).toBeIn("L "),
+		"posPointOfSaleInteractionTerminal9": lambda value: restrict(value).toBeIn("0^,1^,2^,3^,4^,5^,6^,7^,8^,9^,  ".split(",")),
 		"merchantCategoryCodeMcc": None,
 		"sourceCurrencyCode": None,
 		"cardAcceptorIdentifier": None,
-		"adustedTransactionIndicator": None,
+		"adustedTransactionIndicator": lambda value: restrict(value).toBeIn("NY "),
 		"mailTelephoneOrElectronicCommerce": None,
-		"merchantCountryCode": None,
+		"merchantCountryCode": lambda value: restrict(value).toBeLeftAligned(),
 		"posPointOfSaleInteractionTerminal16": None,
 		"merchantTaxIdentifier": None,
-		"additionalInformationIndicator": None,
+		"additionalInformationIndicator": lambda value: restrict(value).toBeLeftAligned().AND().haveCharAt("-",3),
 		"merchantTelephoneNumber": None,
 		"departmentCode": None,
-		"merchantAdditionalDataIndicator": None,
+		"merchantAdditionalDataIndicator": lambda value: restrict(value).toBeIn("Y "),
 		"merchantStoreNumber": None,
 		"merchantDepositDate": None,
 		"reservedForFutureUse24": None,
 		"controlSequenceNumber": None,
 		"reservedForFutureUse26": None,
-		"alternateTotalNetDepositAmount": None,
+		"alternateTotalNetDepositAmount": lambda value: restrict(value).toBeRightAligned(r"0"),
 		"convertCurrencyIndicator": None,
 		"americanExpressOptblueIndustry": None,
 		"reservedForFutureUse30": None,
 		"merchantDefinedConversionRate": None,
-		"discoverMapOverrideFlag": None,
+		"discoverMapOverrideFlag": lambda value: restrict(value).toBeIn(" YN"),
 		"frontEndBin": None,
 		"frontEndMid": None,
 		"reservedForFutureUse35": None,
-		"americanExpressOptblueParticipation": None,
+		"americanExpressOptblueParticipation": lambda value: restrict(value).toBeIn(" YN"),
 		"reservedForFutureUse37": None
 	}
 
@@ -219,7 +356,7 @@ class MerchantHeader(Record):
 		self.frontEndMid,
 		self.reservedForFutureUse35,
 		self.americanExpressOptblueParticipation,
-		self.reservedForFutureUse37) = (None)*37
+		self.reservedForFutureUse37) = tuple([None]*37)
 		self.data = f.read(MerchantHeader.LENGTH)
 		super(MerchantHeader, self).__init__()
         

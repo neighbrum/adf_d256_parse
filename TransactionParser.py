@@ -24,7 +24,10 @@ class TSYSStateMachine:
 
     def run(self):
         thr = TSYS.TransmissionHeader(self.f)
-        print(thr.data)
+        try:
+            tst = TSYS.MerchantHeader(self.f)
+        except ValueError as e:
+            print(str(e))
 
 def main():
     #ADFSTM = ADFStateMachine("data/test_4.ADF")
