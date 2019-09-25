@@ -23,7 +23,7 @@ class TSYSStateMachine:
         self.records = []
 
     def run(self):
-        thr = TSYS.TransmissionHeaderRecord(self.f)
+        thr = TSYS.TransmissionHeader(self.f)
         print(thr.data)
 
 def main():
