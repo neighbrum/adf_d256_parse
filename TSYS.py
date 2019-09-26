@@ -142,8 +142,6 @@ class Record:
 				if(restriction(self.__dict__[identifier]).hasFailed()):
 					raise ValueError(f'Failed to restrict {identifier} in {self.__class__.__name__} Record \n\t rule--> {Restrict.str}')
 		
-
-
 class TransmissionHeader(Record):
 	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe sequence number for the transmission \r\nheader must be 0000001. For more \r\ninformation about sequence numbers, see \r\nSequence numbers on page 55.'),
 			('2', '8-11', '4', 'N', 'TSYS Acquiring Solutions', 'Transaction Code\r\nRequired value  9010'),
@@ -233,7 +231,61 @@ class TransmissionHeader(Record):
 		self.reservedForFutureUse25) = tuple([None]*25)
 		self.data = f.read(TransmissionHeader.LENGTH)
 		super(TransmissionHeader, self).__init__()
-        
+
+class BatchHeader(Record):
+	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe Sequence Number idenified records positions within transmission file'),
+			  ('2', '8-11', '4', 'N', 'TSYS Acquiring Solutions', 'Transaction Code\r\n Required value: 9012'),
+			  ('3', '12-15', '4', 'AN', 'TSYS Acquiring Solutions', 'Transmit Bank Number\r\n The transmit bank number is assigned by TSYS'),
+			  ('4', '16-20', '5', 'AN', 'TSYS Acquiring Solutions', 'Bank Format Identifier\r\nThe value in this field indicates the type of transasction records included in this batch. For a batch of Draft256 records, use DF256 in this field. \r\n ALL records in a batch bust be the same format type.'),
+			  ('5', '21-23', '3', 'N', 'TSYS Acquiring Solutions', 'Julian Day of the Year\r\n Format: DDD'),
+			  ('6', '24-27', '4', 'N', 'TSYS Acquiring Solutions', 'Batch Number\r\nThis field must contain the batch number assigned by the clien or the clients data capture vendor'),
+			  ('7', '28-30', '3', 'AN', 'TSYS Acquiring Solutions', 'Batch Operator Initials\r\nThis field must contain the initials of the operator who generate the batch or another unique batch ID.'),
+			  ('8', '31-33', '3', 'AN', 'TSYS Acquiring Solutions', 'Batch Items Retention Location\r\nThis field can contain the item retention location or a unique batch ID'),
+			  ('9', '34-44', '11', 'N', 'TSYS Acquiring Solutions', 'Beginning Transaction Reference Number\r\nThe first record in the batch is assigned this beginning reference number. The reference number is increased by one for each subsequent record. \r\nThis field must contain a non-zero number. It must be right aligned and zero filled.\r\nNOTE: If the merchant headers referenc enumber field contains a number, that number will override the one in this field.'),
+			  ('10', '45-50', '6', 'AN', 'TSYS Acquiring Solutions', 'Transaction Date Override\r\nThe value in this field will be used as the transaction date in any records where the transaction date field contains spaces. If this override field contains spaces, TSYS will use the date of outgoing processing for any undated transaction records.\r\n Format:MMDDYY'),
+			  ('11', '51', '1', 'AN', 'TSYS Acquiring Solutions', 'Expanded Trailer Amounts Indicator\r\nThis field indicates whether the batch trailer expanded amount fields will be used instead of the standard amount fields. Each expanded amount field is 15 bytes long, and most standard amount fields are 10 bytes long. Expanded length fields are available only if 256-byte records are being transmitted. Possible Values: \r\nspace - use standard amount fields (batch trailer fields 8,10,12,14)\r\n Y - use expanded amount fields (batch trailer fields 17-20)'),
+			  ('12', '52-128', '77', 'S', 'TSYS Acquiring Solutions', 'Reserved for future use'),
+			  ('13', '129-256', '128', 'S', 'TSYS Acquiring Solutions', 'Reserved for future use'))
+
+	ROW = lambda row, RECORD=RECORD: RECORD[row]
+	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
+	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
+
+	restrictions = {
+		"sequenceNumber": None,
+		"transactionCode": None,
+		"transmitBankNumber": None,
+		"batchFormatIdentifier": None,
+		"julianDayOfTheYear": None,
+		"batchNumber": None,
+		"batchOperatorInitials": None,
+		"batchItemsRetentionLocation": None,
+		"beginningTransactionReferenceNumber": None,
+		"transactionDateOverride": None,
+		"expandedTrailerAmountsIndicator": None,
+		"reservedForFutureUse12": None,
+		"reservedForFutureUse13": None
+	}
+
+	LENGTH = 256
+
+	def __init__(self,f):
+		(self.sequenceNumber,
+		 self.transactionCode,
+		 self.transmitBankNumber,
+		 self.batchFormatIdentifier,
+		 self.julianDayOfTheYear,
+		 self.batchNumber,
+		 self.batchOperatorInitials,
+		 self.batchItemsRetentionLocation,
+		 self.beginningTransactionReferenceNumber,
+		 self.transactionDateOverride,
+		 self.expandedTrailerAmountsIndicator,
+		 self.reservedForFutureUse12,
+		 self.reservedForFutureUse13) = tuple([None]*13)
+		self.data = f.read(BatchHeader.LENGTH)
+		super(BatchHeader, self).__init__()
+
 class MerchantHeader(Record):
 	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe Sequence Number identifies the \r\nrecords position within the transmission \r\nfile.'),
 			('2', '8-11', '4', 'N', 'TSYS Acquiring Solutions', 'Transaction Code\r\nPossible values  \r\n9104 - \r\nThe merchant name and address \r\n(city, state, country, and postal \r\ncode) will be pulled from the TSYS \r\nAcquiring Solutions Merchant \r\nAccounting System (MAS). The \r\nMerchant Category Code (MCC) \r\nwill be pulled from the Merchant \r\nHeader 6 unless that field contains \r\nspaces. For more information, see \r\nthe Merchant Category Code\r\nfield (field 10).\r\n9107 - \r\nThe merchant name and address \r\nand the Merchant Category Code \r\nwill be pulled from the Draft 256 \r\nFinancial record. \r\n9019 - \r\nUsed for Merchant Transmittal \r\nAdustments.\r\nNote\r\nAirline transactions must use a transaction \r\ncode of 9107.'),
