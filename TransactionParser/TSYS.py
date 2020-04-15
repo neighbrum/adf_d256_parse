@@ -1,195 +1,30 @@
 import types
 import re
-
-NegativeAmounts = {'}': 0, 'J': 1, 'K': 2, 'L': 3, 'M': 4, 'N': 5, 'O': 6, 'P': 7, 'Q': 8, 'R': 9}
-DataTypes = {'A': r'[a-zA-Z]+', 'AN': r'[a-zA-Z0-9 ]+', 'S': r' +', 'N': '\d+', 'PN': r'.{2}'} #NOTE: TSYS may use more than 2 bytes for PN...
-UserAbbreviations = {'All': 'All associations and TSYS Acquiring Solutions', 'X': 'American Express®', 'CAPN': 'American Express Card Acceptance Processing Network®', 'D': 'Diners Club®', 'S': 'Discover®', 'E': 'Europay®', 'JCB': 'Japanese Credit Bureau®', 'M': 'MasterCard®', 'P': 'Private label', 'V': 'Visa®', 'V-UK': 'Visa United Kingdom®', 'V-EU': 'Visa European Union®', 'TSYS Acquiring Solutions': 'TSYS Acquiring Solutions'}
-NetworkIDs = {'XL': 'Accel®', 'AF': 'Armed Forces Financial Network (AFFN)', 'AL': 'Alert®', 'AV': 'Avail®', 'BM': 'Bankmate®', 'CA': 'Cactus®', 'CS': 'Cash Station®', 'CU': 'Credit Union 24 (CU24)', 'EB': 'EBT® (Electronic Benefits Transfer)', 'EV': 'Evertec', 'EH': 'The Exchange®', 'DB': 'Generic debit', 'GF': 'Gulfnet®', 'HO': 'Honor®', 'IT': 'Instant Teller®', 'IL': 'Interlink®', 'JE': 'Jeanie®', 'MA': 'Mac®', 'ME': 'Maestro®', 'ML': 'Magicline®', 'MS': 'Money Station®', 'MO': 'Most®', 'IM': 'Mpact®', 'NY': 'NYCE®', 'PL': 'Pulse®', 'QU': 'Quest®', 'S': 'Shaam®', 'ST': 'Star (Explore)®', 'TY': 'Tyme®', 'VI': 'Visa®', 'C2': 'Visa Checkcard II®', 'YN': 'Yankee 24®'}
-ExtensionRecordIndicator = {'AIRL1': 'Airline/Passenger Transport 1',
-							'AMEXR': 'Restaurant',
-							'CARNT': 'Car Rental',
-							'CHECK': 'Electronic Check',
-							'DIRCT': 'Direct Marketing',
-							'EINTR': 'Electronic Invoice Transaction Data',
-							'EINPR': 'Electronic Invoice Party Information',
-							'ENT1*': 'Entertainment/Ticketing',
-							'EXT**': 'General',
-							'FLEET': 'Fleet Service 1',
-							'INS1*': 'Insurance',
-							'LODGE': 'Lodging',
-							'MERCH': 'Merchant Description',
-							'PURC1': 'Purchasing Card1',
-							'RETAL': 'Retail',
-							'SHIP1': 'Shipping Service 1',
-							'TEMP1': 'Temporary Help Services 1',
-							'TBSUM': 'Telephon Billing Summary',
-							'TBDET': 'Telephone Billing Detail'}
-
-class Restrict:
-	_str = ""
-
-	def __init__(self, value):
-		self.value = value
-		self.successful = True
-		Restrict.str = ""
-
-	def AND(self):
-		if not self.successful:
-			return self
-		return self
-	
-	def OR(self):
-		if not self.successful:
-			self.successful = True
-		return self
-	
-	def hasFailed(self):
-		return not self.successful
-
-	def toBe(self, cmp):
-		if not self.successful:
-			return self
-		Restrict.str = f'restrict {self.value} to be {cmp}'
-		expr = False
-		try:
-			expr = (self.value is cmp)
-		except Exception:
-			Restrict.str += " exception caught in Restrict::toBe"
-			self.successful = False
-			return self
-		self.successful = True if expr else False
-		return self
-
-	def toEqual(self, cmp):
-		if not self.successful:
-			return self
-		Restrict.str = f'restrict {self.value} to equal {cmp}'
-		expr = False
-		try:
-			expr = (self.value == cmp)
-		except Exception:
-			Restrict.str += " exception caught in Restrict::toEqual"
-			return self
-		self.successful = True if expr else False
-		return self
-
-	def toBeIn(self, iteratable, key=None):
-		if not self.successful:
-			return self
-		iter_str = str(iteratable[0:10])
-		if len(iteratable[0:10]) > 11:
-			iter_str = iter_str[:-1] + "..." 
-		Restrict.str = f'restrict {self.value} to be in {iter_str}'
-		elements = iteratable
-		if isinstance(key, types.LambdaType):
-			try:
-				elements = map(key, iteratable)
-			except ValueError:
-				Restrict.str += " ValueError exception in Restrict::toBeIn"
-				self.successful = False
-				#raise StopIteration("Restrict::toBeIn key could not be applied")
-		self.successful = True if self.value in elements else False
-		return self
-	
-	def toBeDate(self):
-		if not self.successful:
-			return self
-		self.toMatch(r"^[0-9]{6}$")
-		Restrict.str = f'restrict {self.value} to be a date'
-		return self
-
-	def toBeDayOfYear(self):
-		if not self.successful:
-			return self
-		self.toMatch(r"^[0-9]{3}$")
-		Restrict.str = f'restrict {self.value} to be a day of year'
-		return self
-	
-	def toBeLeftAligned(self, fillWith=r'\s'):
-		if not self.successful:
-			return self
-		self.toMatch(re.compile(r"^[^"+fillWith+r"]*["+fillWith+r"]*$"))
-		Restrict.str = f'restrict {self.value} to be left aligned and "{fillWith}" filled'
-		return self
-
-	def toBeRightAligned(self, fillWith=r'\s'):
-		if not self.successful:
-			return self
-		self.toMatch(re.compile(r"^["+fillWith+r"]*[^"+fillWith+r"]*$"))
-		Restrict.str = f'restrict {self.value} to be right aligned and "{fillWith}" filled'
-		return self
-	
-	def haveADigit(self):
-		if not self.successful:
-			return self
-		re.compile(r".*\d.*").match(self.value)
-		Restrict.str = f'restrict {self.value} to have atleast one digit'
-		return self
-	
-	def toBeUpperCase(self):
-		if not self.successful:
-			return self
-		re.compile(r"[A-Z]").match(self.value)
-		Restrict.str = f'restrict {self.value} to be upper case'
-		return self
-
-	def toBeLowerCase(self):
-		if not self.successful:
-			return self
-		re.compile(r"[a-z]").match(self.value)
-		Restrict.str = f'restrict {self.value} to be lower case'
-		return self
-	
-	def haveCharAt(self, char, index):
-		if not self.successful:
-			return self
-		Restrict.str = f'restrict {self.value} to have {char} at index {index}'
-		if len(self.value) > index:
-			Restrict.str += " IndexError caught in Restrict::haveCharAt"
-			raise IndexError
-		self.successful =  True if self.value[index] == char else False
-		return self
-	
-	def toNotBeAll(self, char):
-		if not self.successful:
-			return self
-		re.compile(r".*[^"+char+r"]+.*").match(self.value)
-		Restrict.str = f'restrict {self.value} to have atleast one character different than "{char}"'
-		return self
-	
-	def toSpanSubfields(self, single_char_fields):
-		if not self.successful:
-			return self
-		Restrict.str = f'restrict {self.value} to have atleast one character in each respective field {single_char_fields}'
-		split_value = self.value[::len(single_char_fields[0][0])]
-		for i in range(0,len(single_char_fields)):
-			if not(split_value[i] in single_char_fields[i]):
-				self.successful = False
-		return self
-
-	def toMatch(self, regex):
-		if not self.successful:
-			return self
-		Restrict.str = f'restrict {self.value} by exactly matching {str(regex)}'
-		self.successful = True if re.compile(regex).match(self.value) else False 
-		return self
-
-def restrict(value):
-	return Restrict(value)
+from TransactionParser.Restrict import Restrict, restrict
+from TransactionParser import NegativeAmounts, DataTypes, UserAbbreviations, NetworkIDs, ExtensionRecordIndicator
 
 class Record:
 	def __init__(self):
 		identifiers = list(self.restrictions.keys())
+
+		self.warnings = {}
+		self.errors = {}
+
 		for i in range(0,len(self.restrictions)):
 			identifier = identifiers[i]
+			#print(identifier, end="-->")
+			#print("".join(self.__class__.AT(i, 5).split("\r\n")[0].split(" ")))
 			index = min(map(int,self.__class__.AT(i, 1).split("-"))) - 1
 			end = index + int(self.__class__.AT(i,2))
 			self.__dict__[identifier] = self.data[index:end]
 		for identifier, restriction in self.restrictions.items():
 			if restriction:
-				restriction(self.__dict__[identifier])
-				if(restriction(self.__dict__[identifier]).hasFailed()):
-					raise ValueError(f'Failed to restrict {identifier} in {self.__class__.__name__} Record \n\t rule--> {Restrict.str}')
+				try:
+					if(restriction(self.__dict__[identifier]).hasFailed()):
+						self.warnings[identifier] = f'Failed to restrict {identifier} in {self.__class__.__name__} Record \n\t rule--> {Restrict.str}'
+						Restrict.clear()
+				except Exception as e:
+						self.errors[identifier] = f'{e.__class__.__name__} -> {str(e)}'
 		
 class TransmissionHeader(Record):
 	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe sequence number for the transmission \r\nheader must be 0000001. For more \r\ninformation about sequence numbers, see \r\nSequence numbers on page 55.'),
@@ -378,9 +213,25 @@ class MerchantHeader(Record):
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
+	@staticmethod
+	def get_posPointOfSaleInteractionTerminal9(value):
+		return {
+			"0^":"Unknown",
+			"1^":"Terminal not used",
+			"2^":"Mag Stripe",
+			"3^":"Bar code/Payment code",
+			"4^":"OCR",
+			"5^":"Chip",
+			"6^":"",
+			"7^":"",
+			"8^":"Contactless-read capability",
+			"9^":"Terminal does not read track data",
+			"  ":"" 
+		}[value]
+
 	restrictions = {
 		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
-		"transactionCode": lambda value: restrict(value).toBeIn(["9104","9107","9019"]),
+		"transactionCode": None,
 		"merchantAccountNumber": lambda value: restrict(value).toBeLeftAligned(),
 		"beginningTransactionReferenceNumber": lambda value: restrict(value).toBeRightAligned(r"0").AND().haveADigit(),
 		"netDepositAmount": lambda value: restrict(value).toBeRightAligned(r"0"),
@@ -396,8 +247,8 @@ class MerchantHeader(Record):
 		"merchantCountryCode": lambda value: restrict(value).toBeLeftAligned(),
 		"posPointOfSaleInteractionTerminal16": None,
 		"merchantTaxIdentifier": None,
-		"additionalInformationIndicator": lambda value: restrict(value).toBeLeftAligned().AND().haveCharAt("-",3),
-		"merchantTelephoneNumber": None,
+		"additionalInformationIndicator": lambda value: restrict(value).toBeIn("NY "),
+		"merchantTelephoneNumber": lambda value: restrict(value).toBeLeftAligned().AND().haveCharAt('-',3),
 		"departmentCode": None,
 		"merchantAdditionalDataIndicator": lambda value: restrict(value).toBeIn("Y "),
 		"merchantStoreNumber": None,
@@ -499,7 +350,8 @@ class FinancialRecord(Record):
 			('29', '150-161', '12', 'N', 'All', 'Authoriation Amount\r\nThis field should contain the original \r\ntransaction amount that was authoried.'),
 			('30b-1', '162-164', '3', 'N', 'M ', 'Electronic Commerce Security Level \r\nIndicator \r\nConsists of three subfields that provide \r\ninformation about the Universal Cardholder \r\nAuthentication Field (UCAF) security \r\nprotocol for internet transactions.\r\nSubfield 1 - Security Protocol\r\nPossible values  \r\n0 - \r\nReserved for existing MasterCard \r\nEurope/Visa� definitions\r\n1 - \r\nReserved for future use\r\n2 - \r\nChannel\r\n3-8 - \r\nReserved for future use\r\n9 - \r\nNone (no security protocol)\r\nSubfield 2 - Cardholder Authentication \r\nIndicator\r\nPossible values  \r\n0 - \r\nReserved for future use\r\n1 - \r\nCardholder certificate not used\r\n2 - \r\nProcessed through MasterPass\r\n3 - \r\nReserved for future use\r\n4 - \r\nDigital Secure Remote Payment \r\ntransaction\r\n9 - \r\nReserved for future use\r\nSubfield 3 - UCAF Collection Indicator\r\nPossible values  \r\n0 - \r\nUCAF data collection is not \r\nsupported by the merchant\r\n1 - \r\nUCAF data collection is supported \r\nby the merchant, and UCAF data \r\nmay be present in the authoriation \r\nmessage2 - \r\nUCAF data collection is supported \r\nby the merchant, and UCAF data \r\nwas present in the authoriation \r\nmessage\r\n3 - \r\nUCAF data collection is supported \r\nby the merchant, and UCAF \r\nMasterCard assigned Static Account \r\nholder Authentication Value data \r\nmust be present\r\n4 - \r\nReserved for future use\r\n5 - \r\nIssuer risk based decisioning  \r\n6 - \r\nMerchant risk based decisioning \r\n7 - \r\nPartial shipment or recurring \r\npayment'),
 			('30a', '162-165', '4', 'AN', 'V', 'Validation Code'),
-			('30b-2', '165', '1', 'S', 'TSYS Acquiring Solutions', 'Reserved for future useVisa   Authoriation Response Code\r\nDiscover   Response Code\r\nAmex Approval Code'),
+			('30b-2', '165', '1', 'S', 'TSYS Acquiring Solutions', 'Reserved for future use'),
+			('31','166-167','2','AN', 'VSX','Visa   Authoriation Response Code\r\nDiscover   Response Code\r\nAmex Approval Code'),
 			('32b-1', '168-171', '4', 'N', 'M', 'BankNet Date\r\nFormat  MMDD'),
 			('32a', '168-173', '6', 'N', 'VS', 'Authoriation Date\r\nFormat MMDDYY\r\nAuthoriation Transmission Date\r\nDate that the authoriation was captured by \r\nthe association or scheme (MMDDYY).\r\nDiscover Local Transaction Date \r\nDate the transaction took place \r\n(MMDDYY). This date is the merchants \r\nlocal date. '),
 			('32b-2', '172-173', '2', 'S', 'TSYS Acquiring Solutions', 'Reserved for future use'),
@@ -684,7 +536,7 @@ class FinancialRecord(Record):
 		self.visaServiceDevelopmentIndicator,
 		self.registerNumber,
 		self.originalEsidCode,
-		self.mastercardRecurringPaymentIndicator) = (None)*71
+		self.mastercardRecurringPaymentIndicator) = tuple([None]*71)
 		self.data = f.read(FinancialRecord.LENGTH)
 		super(FinancialRecord, self).__init__()
         
@@ -1736,7 +1588,7 @@ class GeneralExtensionRecord(Record):
 		"cardProductCode": None,
 		"reservedForFutureUse7": None,
 		"mediaCode": lambda value: restrict(value).toBeIn(["01","01","03","04","05"]),
-		"submissionMethod": restrict(value).toBeIn(["01","01","03","05","06","07","10","13","  "]),
+		"submissionMethod": lambda value: restrict(value).toBeIn(["01","01","03","05","06","07","10","13","  "]),
 		"cardExpiryDate": lambda value: restrict(value).toMatch(r"^\d{4}$"),
 		"transactionTime": lambda value: restrict(value).toBeDate(),
 		"serviceCode": None,
@@ -1866,12 +1718,12 @@ class TokenExtensionRecord(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"extensionRecordIndicator3": None,
+		"extensionRecordIndicator3": lambda value: restrict(value).toEqual("TOKEN"),
 		"tokenAssuranceLevel": None,
 		"reservedForFutureUse5": None,
-		"accountRangeStatus": None,
+		"accountRangeStatus": lambda value: restrict(value).toBeIn(" RN"),
 		"basTokenIndicator": None,
 		"requestorId": None,
 		"reservedForFutureUse9": None,
@@ -1913,18 +1765,18 @@ class InsuranceIndustryExtensionRecord(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toBe("INS1*"),
 		"insurancePolicyNumber": None,
-		"insuranceCoverageStartDate": None,
-		"insuranceCoverageEndDate": None,
+		"insuranceCoverageStartDate": lambda value: restrict(value).toBeDate(),
+		"insuranceCoverageEndDate": lambda value: restrict(value).toBeDate(),
 		"insurancePolicyPremiumFrequency": None,
 		"additionalInsurancePolicyNumber": None,
 		"typeOfPolicy": None,
 		"nameOfInsured": None,
 		"reservedForFutureUse": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toBe("     ")
 	}
 
 	LENGTH = 256
@@ -1994,47 +1846,47 @@ class LodgingExtensionRecord(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toBe("LODGE"),
 		"hotelFolioNumber": None,
 		"recordOfCharge": None,
 		"customerServiceTelephoneNumber": None,
-		"purchaseIdentifier": None,
+		"purchaseIdentifier": lambda value: restrict(value).toBeLeftAligned(),
 		"reservedForFutureUse4b3": None,
 		"reservedForFutureUse4c2": None,
-		"noShowIndicator": None,
+		"noShowIndicator": lambda value: restrict(value).toBeIn([0,1,2,3]),
 		"extraCharges": None,
-		"checkInDateMmddyy": None,
+		"checkInDateMmddyy": lambda value: restrict(value).toBeDate(),
 		"marketSpecificAuthoriationData": None,
 		"totalAuthoriedAmount": None,
 		"propertyTelephoneNumber": None,
-		"checkoutDate": None,
+		"checkoutDate": lambda value:restrict(value).toBeDate(),
 		"programCode": None,
 		"dailyRoomRate": None,
-		"totalTax": None,
-		"totalChargesForAllCalls": None,
-		"foodBeverageCharges": None,
-		"barMiniBarCharges": None,
-		"giftShopCharges": None,
-		"laundryDryCleaningAmount": None,
+		"totalTax": lambda value:restrict(value).toBeRightAligned("0"),
+		"totalChargesForAllCalls": lambda value:restrict(value).toBeRightAligned("0"),
+		"foodBeverageCharges": lambda value:restrict(value).toBeRightAligned("0"),
+		"barMiniBarCharges": lambda value:restrict(value).toBeRightAligned("0"),
+		"giftShopCharges": lambda value:restrict(value).toBeRightAligned("0"),
+		"laundryDryCleaningAmount": lambda value:restrict(value).toBeRightAligned("0"),
 		"otherServicesCode": None,
-		"otherServicesCharges": None,
+		"otherServicesCharges": lambda value:restrict(value).toBeRightAligned("0"),
 		"billingAdustmentIndicator": None,
 		"folioCashAdvances": None,
 		"prepaidExpense": None,
-		"extensionRecordIndicator": None,
-		"roomNights": None,
+		"extensionRecordIndicator": lambda value:restrict(value).toBeIn(["     ","LODGE","OPTIN","PURC1"]),
+		"roomNights": lambda value:restrict(value).toBeRightAligned("0"),
 		"totalRoomTax": None,
-		"fireSafetyActIndicator": None,
-		"billingAdustmentSign": None,
-		"roomTaxAmountSign": None,
-		"phoneChargeSign": None,
-		"roomServiceSign": None,
-		"barSign": None,
-		"giftShopSign": None,
-		"laundrySign": None,
-		"otherServicesSign": None,
+		"fireSafetyActIndicator": lambda value:restrict(value).toBeIn("YN"),
+		"billingAdustmentSign": lambda value:restrict(value).toBeIn("CD"),
+		"roomTaxAmountSign": lambda value:restrict(value).toBeIn("CD"),
+		"phoneChargeSign": lambda value:restrict(value).toBeIn("CD"),
+		"roomServiceSign": lambda value:restrict(value).toBeIn("CD"),
+		"barSign": lambda value:restrict(value).toBeIn("CD"),
+		"giftShopSign": lambda value:restrict(value).toBeIn("CD"),
+		"laundrySign": lambda value:restrict(value).toBeIn("CD"),
+		"otherServicesSign": lambda value:restrict(value).toBeIn("CD"),
 		"reservedForFutureUse37": None
 	}
 
@@ -2110,18 +1962,22 @@ class MerchantDescriptionExtensionRecord(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
-		"merchantStreetAddress": None,
-		"merchantTelephoneNumber": None,
-		"soleProprietorName": None,
-		"legalCorporateName": None,
-		"merchantLocationPostalCode": None,
+		"formatIndicator": lambda value: restrict(value).toBe("MERCH"),
+		"merchantStreetAddress": lambda value: restrict(value).toBeLeftAligned(),
+		"merchantTelephoneNumber": lambda value: restrict(value).toBeLeftAligned(),
+		"soleProprietorName": lambda value: restrict(value).toBeLeftAligned(),
+		"legalCorporateName": lambda value: restrict(value).toBeLeftAligned(),
+		"merchantLocationPostalCode": lambda value: restrict(value).toBeLeftAligned(),
 		"dunBradstreetNumber": None,
-		"customerIdentifierType": None,
-		"merchantContactInformation": None,
-		"merchantDba": None,
+		"customerIdentifierType": lambda value: restrict(value).toBeIn(["CUSORD",
+																		"CUSTPO",
+																		"FOLNUM",
+																		"INVACT",
+																		"OTHER1"]),
+		"merchantContactInformation": lambda value: restrict(value).toBeLeftAligned(),
+		"merchantDba": lambda value: restrict(value).toBeLeftAligned(),
 		"customIdentifierDetail": None,
 		"reservedForFutureUse10a3": None,
 		"laneId": None,
@@ -2200,46 +2056,70 @@ class TaxExtensionRecord(Record):
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
+	@staticmethod
+	def taxType(value):
+		taxTypes = {
+		"00":"Unknown",
+		"01":"Federal or national sales tax",
+		"02":"State sales tax",
+		"03":"City sales tax",
+		"04":"Local sales tax",
+		"05":"Municipal sales tax",
+		"06":"Other tax",
+		"10":"Value Added Tax",
+		"11":"Goods and Services Tax",
+		"12":"Provincial Sales Tax",
+		"13":"Harmonized Sales Tax",
+		"14":"Quebec Sales Tax",
+		"20":"Room Tax",
+		"21":"Occupancy Tax",
+		"22":"Energy Tax",
+		"  ":"Not applicable"
+		}
+		return taxTypes[value]
+
+	get_taxTypeId1,get_taxTypeId2,get_taxTypeId3,get_taxTypeId4,get_taxTypeId5,get_taxTypeId6 = [taxType]*6
+
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
-		"taxAmountIndicator1": None,
-		"taxAmount1": None,
-		"taxRate1": None,
-		"taxRateExponent1": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("TAX**"),
+		"taxAmountIndicator1": lambda value: restrict(value).toBeIn("YN "),
+		"taxAmount1": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRate1": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRateExponent1": lambda value: restrict(value).toMatch('[0-5]'),
 		"taxTypeApplied1": None,
-		"taxTypeId1": None,
-		"taxAmountIndicator2": None,
-		"taxAmount2": None,
-		"taxRate2": None,
-		"taxRateExponent2": None,
+		"taxTypeId1": lambda value: restrict(value).toBeIn("00,01,02,03,04,05,06,10,11,12,13,14,20,21,22,  ".split(",")),
+		"taxAmountIndicator2": lambda value: restrict(value).toBeIn("YN "),
+		"taxAmount2": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRate2": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRateExponent2": lambda value: restrict(value).toMatch('[0-5]'),
 		"taxTypeApplied2": None,
-		"taxTypeId2": None,
-		"taxAmountIndicator3": None,
-		"taxAmount3": None,
-		"taxRate3": None,
-		"taxRateExponent3": None,
+		"taxTypeId2": lambda value: restrict(value).toBeIn("00,01,02,03,04,05,06,10,11,12,13,14,20,21,22,  ".split(",")),
+		"taxAmountIndicator3": lambda value: restrict(value).toBeIn("YN "),
+		"taxAmount3": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRate3": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRateExponent3": lambda value: restrict(value).toMatch('[0-5]'),
 		"taxTypeApplied3": None,
-		"taxTypeId3": None,
-		"taxAmountIndicator4": None,
-		"taxAmount4": None,
-		"taxRate4": None,
-		"taxRateExponent4": None,
+		"taxTypeId3": lambda value: restrict(value).toBeIn("00,01,02,03,04,05,06,10,11,12,13,14,20,21,22,  ".split(",")),
+		"taxAmountIndicator4": lambda value: restrict(value).toBeIn("YN "),
+		"taxAmount4": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRate4": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRateExponent4": lambda value: restrict(value).toMatch('[0-5]'),
 		"taxTypeApplied4": None,
-		"taxTypeId4": None,
-		"taxAmountIndicator5": None,
-		"taxAmount5": None,
-		"taxRate5": None,
-		"taxRateExponent5": None,
+		"taxTypeId4": lambda value: restrict(value).toBeIn("00,01,02,03,04,05,06,10,11,12,13,14,20,21,22,  ".split(",")),
+		"taxAmountIndicator5": lambda value: restrict(value).toBeIn("YN "),
+		"taxAmount5": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRate5": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRateExponent5": lambda value: restrict(value).toMatch('[0-5]'),
 		"taxTypeApplied5": None,
-		"taxTypeId5": None,
-		"taxAmountIndicator6": None,
-		"taxAmount6": None,
-		"taxRate6": None,
-		"taxRateExponent6": None,
+		"taxTypeId5": lambda value: restrict(value).toBeIn("00,01,02,03,04,05,06,10,11,12,13,14,20,21,22,  ".split(",")),
+		"taxAmountIndicator6": lambda value: restrict(value).toBeIn("YN "),
+		"taxAmount6": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRate6": lambda value: restrict(value).toMatch('[0-9]*').toBeRightAligned(),
+		"taxRateExponent6": lambda value: restrict(value).toMatch('[0-5]'),
 		"taxTypeApplied6": None,
-		"taxTypeId6": None,
+		"taxTypeId6": lambda value: restrict(value).toBeIn("00,01,02,03,04,05,06,10,11,12,13,14,20,21,22,  ".split(",")),
 		"buyerRecipientName": None,
 		"reservedForFutureUse": None,
 		"extensionRecordIndicator": None
@@ -2340,11 +2220,18 @@ class PurchasingCard1ExtensionRecord(Record):
 	ROW = lambda row, RECORD=RECORD: RECORD[row]
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
+	@staticmethod
+	def get_extensionRecordIndicator(value):
+		return {
+		"D":"PURC2",
+		"T":"TEMP1",
+		"S":"SHIP1",
+		}[value]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("PURC1"),
 		"visaValueAddedTaxVatAmountOr": None,
 		"visaVatRateOrShippingAndFreight": None,
 		"mastercardUniqueInvoiceNumber": None,
@@ -2354,8 +2241,8 @@ class PurchasingCard1ExtensionRecord(Record):
 		"reservedForFutureUse7a2": None,
 		"localTaxRateThreeDecimalsImplied": None,
 		"mastercardCustomerCode": None,
-		"visaLocalTaxIncludedIndicator": None,
-		"mastercardTaxExemptIndicator": None,
+		"visaLocalTaxIncludedIndicator": lambda value: restrict(value).toBeIn("012"),
+		"mastercardTaxExemptIndicator": lambda value: restrict(value).toBeIn("01 "),
 		"visaLocalTaxAmount": None,
 		"freightShippingAmount": None,
 		"visaAndMastercardDestinationPostal": None,
@@ -2363,7 +2250,7 @@ class PurchasingCard1ExtensionRecord(Record):
 		"dutyAmount": None,
 		"merchantTaxIdentifier": None,
 		"shipFromPostalCodeIpCode": None,
-		"visaNationalTaxIncludedIndicator": None,
+		"visaNationalTaxIncludedIndicator": lambda value: restrict(value).toBeIn("01"),
 		"visaNationalTaxAmount": None,
 		"otherTax": None,
 		"destinationCountryCode": None,
@@ -2375,14 +2262,14 @@ class PurchasingCard1ExtensionRecord(Record):
 		"retailDepartmentName": None,
 		"vatInvoiceReferenceNumber": None,
 		"orderDate": None,
-		"extensionRecordIndicator": None,
-		"totalTaxAmountSign": None,
-		"freightShippingAmountSignage": None,
-		"dutyAmountSignage": None,
-		"invoiceLevelDiscountTreatmentCode": None,
-		"taxTreatment": None,
-		"vatTaxAmountFreightShipping": None,
-		"discountAmountSignage": None,
+		"extensionRecordIndicator": lambda value: restrict(value).toBeIn("DTS"),
+		"totalTaxAmountSign": lambda value: restrict(value).toBeIn("DC"),
+		"freightShippingAmountSignage": lambda value: restrict(value).toBeIn("DC"),
+		"dutyAmountSignage": lambda value: restrict(value).toBeIn("DC"),
+		"invoiceLevelDiscountTreatmentCode": lambda value: restrict(value).toBeIn("012 "),
+		"taxTreatment": lambda value: restrict(value).toBeIn("01234 "),
+		"vatTaxAmountFreightShipping": lambda value: restrict(value).toBeIn("DC"),
+		"discountAmountSignage": lambda value: restrict(value).toBeIn("DC"),
 		"reservedForFutureUse33": None
 	}
 
@@ -2480,32 +2367,38 @@ class PurchasingCard2ExtensionRecord(Record):
 	ROW = lambda row, RECORD=RECORD: RECORD[row]
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
+	@staticmethod
+	def get_extensionRecordIndicator(value):
+		return {
+		"D":"PURC2",
+		" ": None
+		}[value]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("PURC2"),
 		"reservedForFutureUse4": None,
-		"discountIndicator": None,
+		"discountIndicator": lambda value: restrict(value).toBeIn("YN "),
 		"discountAmount": None,
 		"alternateTaxIdentifier": None,
 		"productCode": None,
 		"reservedForFutureUse9": None,
 		"itemDescription": None,
 		"reservedForFutureUse10a2": None,
-		"chargeDescription": None,
-		"chargeItemQuantity1": None,
+		"chargeDescription": lambda value: restrict(value).toBeLeftAligned(),
+		"chargeItemQuantity1": lambda value: restrict(value).toBeRightAligned("0"),
 		"itemQuantity10a3": None,
 		"itemQuantity10b2": None,
 		"unitOfMeasureCode": None,
-		"unitCost": None,
-		"detailTaxAmountIndicator1": None,
+		"unitCost": lambda value: restrict(value).toBeRightAligned("0"),
+		"detailTaxAmountIndicator1": lambda value: restrict(value).toBeIn("YN "),
 		"visaValueAddedTaxVatTaxRate": None,
 		"reservedForFutureUse15": None,
 		"visaVatTaxAmount": None,
-		"debitCreditIndicator": None,
+		"debitCreditIndicator": lambda value: restrict(value).toBeIn("DC "),
 		"typeOfSupply": None,
-		"extensionRecordIndicator": None,
+		"extensionRecordIndicator": lambda value: restrict(value).toBeIn("D "),
 		"commodityCode": None,
 		"visaLineItemTotal": None,
 		"mastercardItemQuantityExponent": None,
@@ -2514,14 +2407,14 @@ class PurchasingCard2ExtensionRecord(Record):
 		"unitPrice": None,
 		"reservedForFutureUse26": None,
 		"lineItemTaxType": None,
-		"lineItemDate": None,
-		"totalTaxAmountSign": None,
-		"extendedAmountSign": None,
-		"itemDiscountAmountSign": None,
-		"lineItemAmountSign": None,
+		"lineItemDate": lambda value: restrict(value).toBeDate(),
+		"totalTaxAmountSign": lambda value: restrict(value).toBeIn("DC"),
+		"extendedAmountSign": lambda value: restrict(value).toBeIn("DC"),
+		"itemDiscountAmountSign": lambda value: restrict(value).toBeIn("DC"),
+		"lineItemAmountSign": lambda value: restrict(value).toBeIn("DC"),
 		"reservedForFutureUse33": None,
 		"reservedForFutureUse34": None,
-		"lineItemLevelDiscountTreatmentCode": None,
+		"lineItemLevelDiscountTreatmentCode": lambda value: restrict(value).toBeIn("012 "),
 		"reservedForFutureUse36": None
 	}
 
@@ -2593,13 +2486,13 @@ class RestaurantExtensionRecord(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("AMEXR"),
 		"reservedForFutureUse4": None,
 		"recordOfCharge": None,
 		"taxAmount": None,
-		"foodDescription": None,
+		"foodDescription": lambda value: restrict(value).toBeIn(["FOOD","BEVERAGE","FOOD-BEV"]), #is this left/right justified? Draft256 does not specify
 		"foodAmount": None,
 		"beverageAmount": None,
 		"reservedForFutureUse10": None,
@@ -2667,15 +2560,31 @@ class RetailExtensionRecord(Record):
 	ROW = lambda row, RECORD=RECORD: RECORD[row]
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
+	@staticmethod
+	def get_transactionIndicator(value):
+		return {
+		"C":"same as cash, based fixed on a date",
+		"D":"deferred, based on number of days",
+		"F":"deferred, based on a fixed date",
+		"I":"installment",
+		"S":"same as cash, based on number of days",
+		" ":"not applicable"
+		}[value]
+	@staticmethod
+	def get_redemptionType(value):
+		return {
+		"F":"fixed amount",
+		"P":"percentage of transactions"
+		}[value]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
-		"transactionIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("RETAL"),
+		"transactionIndicator": lambda value: restrict(value).toBeIn("CDFIS "),
 		"numberOfDays": None,
 		"reservedForFutureUse5c1": None,
-		"expirationDateForTransactionIndicator": None,
+		"expirationDateForTransactionIndicator": lambda value: restrict(value).toBeDate(),
 		"numberOfInstallments": None,
 		"reservedForFutureUse5b2": None,
 		"reservedForFutureUse6": None,
@@ -2688,7 +2597,7 @@ class RetailExtensionRecord(Record):
 		"redemptionPoints": None,
 		"promotionPoints": None,
 		"registerNumber": None,
-		"redemptionType": None,
+		"redemptionType": lambda value: restrict(value).toBeIn("FP"),
 		"redemptionDollarAmount": None,
 		"flagForNegativeBasePoints": None,
 		"flagForNegativeStorePoints": None,
@@ -2701,7 +2610,7 @@ class RetailExtensionRecord(Record):
 		"digitReferenceNumber23": None,
 		"postalCode": None,
 		"reservedForFutureUse28": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toBeIn(["     ", "GENER"])
 	}
 
 	LENGTH = 256
@@ -2775,12 +2684,12 @@ class MasterCardShippingServicesExtensionRecordFormat1(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("SHIP1"),
 		"serviceDescriptionCode": None,
 		"trackingNumber": None,
-		"pickUpDate": None,
+		"pickUpDate": lambda value: restrict(value).toBeDate().toBeLeftAligned(),
 		"customerCode": None,
 		"shippingNetAmount": None,
 		"incentiveAmount": None,
@@ -2799,7 +2708,7 @@ class MasterCardShippingServicesExtensionRecordFormat1(Record):
 		"deliveryPartyState": None,
 		"deliveryPartyCountry": None,
 		"reservedForFutureUse24": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toEqual("SHIP2")
 	}
 
 	LENGTH = 256
@@ -2850,10 +2759,27 @@ class MasterCardShippingServicesExtensionRecordFormat2(Record):
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
+	@staticmethod
+	def contact(value):
+		contactType = {
+			"1":"Name",
+			"2":"Title",
+			"3":"Telephone",
+			"4":"Email address",
+			"5":"Function"
+		}
+
+		return {
+			"Type":contactType[value[0]],
+			"Value":value[1:]
+		}
+
+	get_shippingPartyContact, get_deliveryPartyContact = contact, contact
+
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("SHIP2"),
 		"shippingPartyName": None,
 		"shippingPartyAddress": None,
 		"deliveryPartyName": None,
@@ -2861,7 +2787,7 @@ class MasterCardShippingServicesExtensionRecordFormat2(Record):
 		"shippingPartyContact": None,
 		"deliveryPartyContact": None,
 		"reservedForFutureUse": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toBeIn(["     ","GENER"])
 	}
 
 	LENGTH = 256
@@ -2908,26 +2834,26 @@ class TelephonyBillingSummary(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("TBSUM"),
 		"userName": None,
 		"userAccountNumber": None,
 		"userTelephoneNumber": None,
-		"statementStartDate": None,
-		"statementEndDate": None,
+		"statementStartDate": lambda value: restrict(value).toBeDate(),
+		"statementEndDate": lambda value: restrict(value).toBeDate(),
 		"billingEvent1AmountFirstOccurrence": None,
-		"billingEvent1SignFirstOccurrence": None,
+		"billingEvent1SignFirstOccurrence": lambda value: restrict(value).toBeIn("DC"),
 		"billingEvent1AmountSecondOccurrence": None,
-		"billingEvent1SignSecondOccurrence": None,
+		"billingEvent1SignSecondOccurrence": lambda value: restrict(value).toBeIn("DC"),
 		"billingEvent1AmountThirdOccurrence": None,
-		"billingEvent1SignThirdOccurrence": None,
+		"billingEvent1SignThirdOccurrence": lambda value: restrict(value).toBeIn("DC"),
 		"billingEvent1AmountFourthOccurrence": None,
-		"billingEvent1SignFourthOccurrence": None,
+		"billingEvent1SignFourthOccurrence": lambda value: restrict(value).toBeIn("DC"),
 		"detailTaxAmount1": None,
-		"detailTaxSignDC1": None,
+		"detailTaxSignDC1": lambda value: restrict(value).toBeIn("DC"),
 		"reservedForFutureUse": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toEqual("TBDET")
 	}
 
 	LENGTH = 256
@@ -2980,12 +2906,12 @@ class TelephonyBillingDetail(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("TBDET"),
 		"totalTaxAmount": None,
-		"totalTaxAmountSign": None,
-		"callDate": None,
+		"totalTaxAmountSign": lambda value: restrict(value).toBeIn("DC"),
+		"callDate": lambda value: restrict(value).toBeDate(),
 		"callTime": None,
 		"callToStateProvince": None,
 		"callToCountry": None,
@@ -2994,9 +2920,9 @@ class TelephonyBillingDetail(Record):
 		"callFromCountry": None,
 		"callFromNumber": None,
 		"callUsageAmount": None,
-		"callUsageAmountSign": None,
+		"callUsageAmountSign": lambda value: restrict(value).toBeIn("DC"),
 		"reservedForFutureUse": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toEqual("TBDET"),
 	}
 
 	LENGTH = 256
@@ -3051,14 +2977,14 @@ class MasterCardTemporaryHelpServicesExtensionRecordFormat1(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("TEMP1"),
 		"employeeTempName": None,
 		"socialSecurityNumber": None,
 		"jobCode": None,
-		"tempStartDate": None,
-		"weekEndingDateSunday": None,
+		"tempStartDate": lambda value: restrict(value).toBeDate(),
+		"weekEndingDateSunday": lambda value: restrict(value).toBeDate(),
 		"regularHoursWorked": None,
 		"regularHoursRate": None,
 		"overtimeHoursWorked": None,
@@ -3072,7 +2998,7 @@ class MasterCardTemporaryHelpServicesExtensionRecordFormat1(Record):
 		"discountAmount": None,
 		"subtotalAmount": None,
 		"reservedForFutureUse": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toEqual("TEMP2")
 	}
 
 	LENGTH = 256
@@ -3119,15 +3045,15 @@ class MasterCardTemporaryHelpServicesExtensionRecordFormat2(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("TEMP2"),
 		"miscellaneousExpenseDescription1": None,
 		"miscellaneousExpenseAmount1": None,
 		"miscellaneousExpenseDescription2": None,
 		"miscellaneousExpenseAmount2": None,
 		"reservedForFutureUse": None,
-		"extensionRecordIndicator": None
+		"extensionRecordIndicator": lambda value: restrict(value).toBeIn(["     ", "GENER"])
 	}
 
 	LENGTH = 256
@@ -3170,19 +3096,27 @@ class ChipDetailExtensionRecord1(Record):
 	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
+	@staticmethod
+	def get_transactionTypeCode(value):
+		return {
+		"00":"Debit",
+		"01":"Cash",
+		"02":"Credit"
+		}[value]
+
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("EMVC1"),
 		"applicationCryptogram": None,
 		"issuerApplicationInformation": None,
 		"unpredictableNumber": None,
 		"applicationTransactionCounter": None,
 		"terminalVerificationResults": None,
 		"transactionDate": None,
-		"transactionTypeCode": None,
+		"transactionTypeCode": lambda value: restrict(value).toBeIn(["00","01","02"]),
 		"amountAuthoried": None,
-		"terminalTransactionCurrencyCode": None,
+		"terminalTransactionCurrencyCode": lambda value:restrict(value).toMatch('0[0-9]{3}'),
 		"terminalCountryCode": None,
 		"applicationInterchangeProfile": None,
 		"amountOther": None,
@@ -3231,9 +3165,9 @@ class TransactionExtensionRecord(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
 		"transactionCode": None,
-		"formatIndicator": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("TADD*"),
 		"detailMerchantName": None,
 		"merchantSoftDescriptor": None,
 		"reservedForFutureUse": None,
@@ -3281,8 +3215,8 @@ class BatchTrailer(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
-		"transactionCode": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
+		"transactionCode": lambda value: restrict(value).toEqual("9013"),
 		"transmitBankNumber": None,
 		"batchFormatIndicator": None,
 		"julianDayOfTheYear": None,
@@ -3351,8 +3285,8 @@ class TransmissionTrailer(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
-		"transactionCode": None,
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
+		"transactionCode": lambda value: restrict(value).toEqual("9011"),
 		"transmitBankNumber": None,
 		"userAssignedTransmissionNumber": None,
 		"amountOfDebits": None,

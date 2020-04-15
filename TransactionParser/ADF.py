@@ -1,7 +1,7 @@
 
-from TSYS import DataTypes
 import re
 from io import StringIO
+from . import DataTypes
 
 class ADFMeta(type):
     def __getitem__(cls,val):
@@ -32,8 +32,6 @@ class Record:
         data = StringIO(self.data)
         for i in range(len(self.RECORD)):
             self.__dict__[list(self.__dict__.keys())[i]] = data.read(int(self.RECORD[i][2]))
-
-
 
 
 class AccessMethods (metaclass=ADFMeta):
