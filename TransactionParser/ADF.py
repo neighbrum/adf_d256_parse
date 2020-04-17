@@ -153,7 +153,7 @@ class BINHeaderRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.reserved1 = (None,None,None)
-        self.data = f.read(BINHeaderRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(BINHeaderRecord.LENGTH)
         super(BINHeaderRecord, self).__init__()
         
 class BINTrailerRecord(Record):
@@ -174,7 +174,7 @@ class BINTrailerRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.bINTotalReportCount, self.bINTotalTransactionCount = (None, None, None, None)
-        self.data = f.read(BINTrailerRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(BINTrailerRecord.LENGTH)
         super(BINTrailerRecord, self).__init__()
         
 class DiscoverPayPalExtensionRecord(Record):
@@ -205,7 +205,7 @@ class DiscoverPayPalExtensionRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.discoverPayPalAcquirerID, self.discoverPayPalMerchantID, self.discoverPayPalProcessingCode, self.discoverPayPalPOSEntryMode, self.discoverPayPalResponseCode, self.discoverPayPalPOSDataCode, self.discoverCashOverAmount, self.discoverPayPalAVSResponseCode, self.cardholderFullNameResultCode, self.registeredUserIndicator, self.lastRegisteredUserProfileDateChange, self.pANReferenceIdentifier, self.reserved13 = (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(DiscoverPayPalExtensionRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(DiscoverPayPalExtensionRecord.LENGTH)
         super(DiscoverPayPalExtensionRecord, self).__init__()
         
 class MastercardExtensionRecord(Record):
@@ -235,7 +235,7 @@ class MastercardExtensionRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.associationTimestamp, self.eMSRiskScore, self.eMSScoreReasonCode, self.domainServer, self.mobileDeviceType, self.transitTransactionTypeIndicator, self.transportationModeIndicator, self.mastercardWalletIdentifier, self.authorizationIndicator, self.laneID, self.transactionIntegrityClass, self.reserved12 = (None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(MastercardExtensionRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(MastercardExtensionRecord.LENGTH)
         super(MastercardExtensionRecord, self).__init__()
         
 class AdditionalDetailDataExtensionRecord(Record):
@@ -256,7 +256,7 @@ class AdditionalDetailDataExtensionRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.terminalVerificationResults, self.cardholderVerificationMethod, self.formFactorIndicator = (None, None, None, None)
-        self.data = f.read(AdditionalDetailDataExtensionRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(AdditionalDetailDataExtensionRecord.LENGTH)
         super(AdditionalDetailDataExtensionRecord, self).__init__()
         
 class MerchantDataExtensionRecord(Record):
@@ -282,7 +282,7 @@ class MerchantDataExtensionRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.pSPName, self.sellerStreetAddress, self.sellerCity, self.sellerPostalCode, self.sellerRegionCode3, self.sellerEmail, self.sellerTelephone, self.reserved8 = (None, None, None, None, None, None, None, None, None)
-        self.data = f.read(MerchantDataExtensionRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(MerchantDataExtensionRecord.LENGTH)
         super(MerchantDataExtensionRecord, self).__init__()
         
 class ReportHeader(Record):
@@ -305,7 +305,7 @@ class ReportHeader(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.agent, self.chain, self.effectiveStartDateTime, self.effectiveEndDateTime = (None, None, None, None, None, None)
-        self.data = f.read(ReportHeader.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(ReportHeader.LENGTH)
         super(ReportHeader, self).__init__()
         
 class ReportHeaderRecord(Record):
@@ -329,7 +329,7 @@ class ReportHeaderRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.agent, self.chain, self.effectiveStartDateTime, self.effectiveEndDateTime, self.includeHostCaptureTransactions = (None, None, None, None, None, None, None)
-        self.data = f.read(ReportHeaderRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(ReportHeaderRecord.LENGTH)
         super(ReportHeaderRecord, self).__init__()
         
 class ReportTrailer(Record):
@@ -355,7 +355,7 @@ class ReportTrailer(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.agent, self.chain, self.effectiveStartDate, self.effectiveEndDate, self.includeErrorTransaction, self.reserved7, self.reportTotalTransactionCount = (None, None, None, None, None, None, None, None, None)
-        self.data = f.read(ReportTrailer.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(ReportTrailer.LENGTH)
         super(ReportTrailer, self).__init__()
         
 class ReportTrailerRecord(Record):
@@ -378,7 +378,7 @@ class ReportTrailerRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.agent, self.chain, self.effectiveStartDateTime, self.effectiveEndDateTime = (None, None, None, None, None, None)
-        self.data = f.read(ReportTrailerRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(ReportTrailerRecord.LENGTH)
         super(ReportTrailerRecord, self).__init__()
         
 class TransactionDetailRecord(Record):
@@ -503,7 +503,7 @@ class TransactionDetailRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.exitBIN, self.agent, self.chain, self.eConnectionsMerchantNumber, self.storeNumber, self.terminalNumber, self.cardAcceptorID, self.merchantName, self.cardAcceptorCity, self.cardAcceptorState, self.cardAcceptorCountryCode, self.countryCodePANExtended, self.nationalPOSGeographicData, self.mCCCode, self.merchantABANumber, self.cardAcceptorSettlementAgent, self.iSOSourceStationID, self.acquirerBusinessID, self.acquirerCountryCode, self.cardType, self.primaryAccountNumber, self.eXTPAN, self.accountID1, self.cardexpirationDate, self.issuingInstitutionStationID, self.issuingInstitutionIDCode, self.julianDay, self.transactionDateTime, self.settlementDate, self.loadDateTime, self.messageType, self.processingCode, self.accessMethod, self.aSCIIBillCode, self.transactionIdentifier, self.retrievalReferenceNumber, self.systemsTraceAuditNumber, self.authorizedAmount, self.cardholderBillingAmount, self.approvalCode, self.authorizationResponse, self.internalErrorCode, self.iSORejectCode, self.cVV2CVC2CIDResponseType, self.cVV2CVC2CIDPresenceIndicator, self.messageReasonCode, self.additionalResponseData, self.requestACI, self.returnACI, self.validationCode, self.productTypeIdentification, self.transactionSourceFlag, self.vARTrackID, self.vendorID, self.pOSEntryMode, self.iSAChargeIndicator, self.aMEXCardholderVerificationResults, self.pOSConditionCode, self.additionalDataPrivateRequest, self.additionalDataPrivateResponse, self.supportingInformation, self.duration, self.marketSpecificDataIndicator, self.cashBackAmount, self.cardholderBillingConversionRate, self.cardholderBillingCurrencyCode, self.requestAdditionalAmount, self.mastercardAssignedID, self.mastercardIIASIndicator, self.responseAdditionalAmount, self.replacementAmounts, self.xID, self.uCAFCollectionIndicator, self.transactionCurrencyCode, self.gatewayCurrencyCode, self.gatewayCountryCode, self.receivingInstitutionCountryCode, self.sharingGroup, self.gIV, self.reimbursementAttribute, self.receivingInstitutionIDCode, self.networkID, self.transactiondata, self.transactionFeeAmount, self.prestigiousPropertyIndicator, self.preAuthTimeLimit, self.forwardingInstitutionCountryCode, self.dialPayAuthorizationCallType, self.digitalEntityIdentifier, self.reserved91, self.reversalRequestCode, self.additionalPOSInformationText, self.endpointCode, self.mappedAccountExpirationDate, self.pOSDataCode, self.pOSEnvironmentIndicator, self.reserved98, self.localTransactionDate, self.localTransactionTime, self.feeProgramIndicator, self.visaDCCIndicator, self.encryptionIndicator, self.tSYSTokenIndicator, self.accountFundingSource, self.issuingBINLookUp, self.fallbackIndicator = (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(TransactionDetailRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(TransactionDetailRecord.LENGTH)
         super(TransactionDetailRecord, self).__init__()
         
 class HostCaptureAdjustmentTransactionDetailRecord(Record):
@@ -536,7 +536,7 @@ class HostCaptureAdjustmentTransactionDetailRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.eXTBIN, self.agent, self.chain, self.merchantNumber, self.storeNumber, self.terminalNumber, self.retrievalReferenceNumber, self.transactionType, self.transactionDateTime, self.accessMethod, self.aSCIIBillCode, self.applicationType1, self.cardType, self.networkID = (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(HostCaptureAdjustmentTransactionDetailRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(HostCaptureAdjustmentTransactionDetailRecord.LENGTH)
         super(HostCaptureAdjustmentTransactionDetailRecord, self).__init__()
         
 class HostCaptureBatchInquiryTransactionDetailRecord(Record):
@@ -566,7 +566,7 @@ class HostCaptureBatchInquiryTransactionDetailRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.acquirerBIN, self.eXTBIN, self.agent, self.chain, self.merchantNumber, self.storeNumber, self.terminalNumber, self.transactionType, self.transactionDateTime, self.accessMethod2, self.aSCIIBillCode1, self.applicationType = (None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(HostCaptureBatchInquiryTransactionDetailRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(HostCaptureBatchInquiryTransactionDetailRecord.LENGTH)
         super(HostCaptureBatchInquiryTransactionDetailRecord, self).__init__()
         
 class TransactionDetailExtensionRecord(Record):
@@ -604,7 +604,7 @@ class TransactionDetailExtensionRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.extensionRecord, self.merchantConsentIndicator, self.goodsSoldProductCode, self.cardBrandTokenAssuranceLevel, self.accountRangeStatus, self.sellerID, self.cardBrandTokenRequestorID, self.industrySENumber, self.sellerDBA, self.paymentFacilitatorIdentifier, self.iSOIdentifier, self.subMerchantIdentifier, self.expandedBillingClass, self.issuerCountryCode, self.serviceCode, self.paymentAccountReference, self.businessApplicationIdentifier, self.endpointPOSDataCode, self.reserved19, self.tSYS = (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(TransactionDetailExtensionRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(TransactionDetailExtensionRecord.LENGTH)
         super(TransactionDetailExtensionRecord, self).__init__()
         
 class TransmissionHeaderRecord(Record):
@@ -635,7 +635,7 @@ class TransmissionHeaderRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.versionNumber, self.destinationID, self.fileType, self.fileFrequency, self.processingYear, self.processingMonth, self.processingWeek, self.processingDay, self.processingEndHour, self.fileReferenceID, self.fileCreationDateTime, self.reserved12, self.reserved13 = (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(TransmissionHeaderRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(TransmissionHeaderRecord.LENGTH)
         super(TransmissionHeaderRecord, self).__init__()
         
 class TransmissionTrailerRecord(Record):
@@ -666,7 +666,7 @@ class TransmissionTrailerRecord(Record):
 
     def __init__(self,f):
         self.recordType, self.versionNumber, self.destinationID, self.filetype, self.fileFrequency, self.processingYear, self.processingMonth, self.processingWeek, self.processingDay, self.processingEndHour, self.fileReferenceID, self.fileTotalBINCount, self.fileTotalReportCount, self.fileTotalTransactionCount = (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
-        self.data = f.read(TransmissionTrailerRecord.LENGTH)
+        self.data = f if type(f) == type("")  else f.read(TransmissionTrailerRecord.LENGTH)
         super(TransmissionTrailerRecord, self).__init__()
         
 
@@ -680,3 +680,24 @@ class Records (metaclass=ADFMeta):
 
     def __init__(self,paramTuple):
         self.transmissionTrailerRecord, self.totalBytes, self.recordCode = paramTuple
+
+RecordMap = {
+    'TH01': Records.DATA[0][-1], 'BH01': Records.DATA[1][-1], 'RH01': Records.DATA[2][-1], 'TD01': Records.DATA[3][-1], 'TD11': Records.DATA[4][-1], 'EX01': Records.DATA[5][-1], 'EX02': Records.DATA[6][-1], 'EX04': Records.DATA[7][-1], 'EX03': Records.DATA[8][-1], 'RH02': Records.DATA[9][-1], 'TD02': Records.DATA[10][-1], 'TD03': Records.DATA[11][-1], 'RT02': Records.DATA[12][-1], 'RT01': Records.DATA[13][-1], 'BT01': Records.DATA[14][-1], 'TT01': Records.DATA[15][-1]
+}
+
+class Parser:
+ 
+    def __init__(self,fn):
+        self.f = fn
+        self.records = []
+
+    def parse(self):
+        record = self.f.read(4)
+        while(len(record) == 4):
+            self.f.seek(self.f.tell()-4)
+            if record in RecordMap:
+                self.records.append(RecordMap[record](self.f))
+            else:
+                raise ValueError(f'{record} is not an ADF type')
+            record = self.f.read(4)
+        self.f.close()

@@ -9,6 +9,7 @@ class Record:
 
 		self.warnings = {}
 		self.errors = {}
+		self.children = []
 
 		for i in range(0,len(self.restrictions)):
 			identifier = identifiers[i]
@@ -113,7 +114,7 @@ class TransmissionHeader(Record):
 		self.byteTransmissionIdentifierFlag256,
 		self.expandedTrailerAmountsIndicator,
 		self.reservedForFutureUse25) = tuple([None]*25)
-		self.data = f.read(TransmissionHeader.LENGTH)
+		self.data = f if type(f) == type("")  else f.read(TransmissionHeader.LENGTH)
 		super(TransmissionHeader, self).__init__()
 
 class BatchHeader(Record):
@@ -136,7 +137,7 @@ class BatchHeader(Record):
 	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
 
 	restrictions = {
-		"sequenceNumber": None,
+		"sequenceNumber": lambda value: restrict(value).toEqual("0000002"),
 		"transactionCode": lambda value: restrict(value).toEqual("9012"),
 		"transmitBankNumber": None, 
 		"batchFormatIdentifier": None, #post process condition, all format types must be the same as this field
@@ -167,7 +168,7 @@ class BatchHeader(Record):
 		 self.expandedTrailerAmountsIndicator,
 		 self.reservedForFutureUse12,
 		 self.reservedForFutureUse13) = tuple([None]*13)
-		self.data = f.read(BatchHeader.LENGTH)
+		self.data = f if type(f) == type("")  else f.read(BatchHeader.LENGTH)
 		super(BatchHeader, self).__init__()
 
 class MerchantHeader(Record):
@@ -231,7 +232,7 @@ class MerchantHeader(Record):
 
 	restrictions = {
 		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
-		"transactionCode": None,
+		"transactionCode": lambda value: restrict(value).toBeIn(["9104", "9107", "9019"]),
 		"merchantAccountNumber": lambda value: restrict(value).toBeLeftAligned(),
 		"beginningTransactionReferenceNumber": lambda value: restrict(value).toBeRightAligned(r"0").AND().haveADigit(),
 		"netDepositAmount": lambda value: restrict(value).toBeRightAligned(r"0"),
@@ -309,7 +310,7 @@ class MerchantHeader(Record):
 		self.reservedForFutureUse35,
 		self.americanExpressOptblueParticipation,
 		self.reservedForFutureUse37) = tuple([None]*37)
-		self.data = f.read(MerchantHeader.LENGTH)
+		self.data = f if type(f) == type("")  else f.read(MerchantHeader.LENGTH)
 		super(MerchantHeader, self).__init__()
         
 class FinancialRecord(Record):
@@ -537,7 +538,7 @@ class FinancialRecord(Record):
 		self.registerNumber,
 		self.originalEsidCode,
 		self.mastercardRecurringPaymentIndicator) = tuple([None]*71)
-		self.data = f.read(FinancialRecord.LENGTH)
+		self.data = f if type(f) == type("")  else f.read(FinancialRecord.LENGTH)
 		super(FinancialRecord, self).__init__()
         
 class AirlinePassengerTransport1ExtensionRecord(Record):
@@ -641,8 +642,8 @@ class AirlinePassengerTransport1ExtensionRecord(Record):
 		self.reservedForFutureUse24,
 		self.electronicTicketNumber,
 		self.reservedForFutureUse26,
-		self.extensionRecordIndicator) = (None)*30
-		self.data = f.read(AirlinePassengerTransport1ExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*30)
+		self.data = f if type(f) == type("")  else f.read(AirlinePassengerTransport1ExtensionRecord.LENGTH)
 		super(AirlinePassengerTransport1ExtensionRecord, self).__init__()
         
 class AirlinePassengerTransport2ExtensionRecord(Record):
@@ -746,8 +747,8 @@ class AirlinePassengerTransport2ExtensionRecord(Record):
 		self.reservedForFutureUse26,
 		self.controlIdTravelObligationNumber,
 		self.reservedForFutureUse28,
-		self.extensionRecordIndicator) = (None)*30
-		self.data = f.read(AirlinePassengerTransport2ExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*30)
+		self.data = f if type(f) == type("")  else f.read(AirlinePassengerTransport2ExtensionRecord.LENGTH)
 		super(AirlinePassengerTransport2ExtensionRecord, self).__init__()
         
 class CarRentalExtensionRecord(Record):
@@ -881,8 +882,8 @@ class CarRentalExtensionRecord(Record):
 		self.rentalLocationCountry,
 		self.taxExemptIndicator,
 		self.taxAmount,
-		self.reservedForFutureUse32) = (None)*39
-		self.data = f.read(CarRentalExtensionRecord.LENGTH)
+		self.reservedForFutureUse32) = tuple([None]*39)
+		self.data = f if type(f) == type("")  else f.read(CarRentalExtensionRecord.LENGTH)
 		super(CarRentalExtensionRecord, self).__init__()
         
 class LodgingOptionalExtensionRecord(Record):
@@ -947,8 +948,8 @@ class LodgingOptionalExtensionRecord(Record):
 		self.laundryCharges,
 		self.totalNonRoomCharges,
 		self.lodgingRenterName,
-		self.reservedForFutureUse17) = (None)*17
-		self.data = f.read(LodgingOptionalExtensionRecord.LENGTH)
+		self.reservedForFutureUse17) = tuple([None]*17)
+		self.data = f if type(f) == type("")  else f.read(LodgingOptionalExtensionRecord.LENGTH)
 		super(LodgingOptionalExtensionRecord, self).__init__()
         
 class POSCheckServiceExtensionRecord(Record):
@@ -1025,8 +1026,8 @@ class POSCheckServiceExtensionRecord(Record):
 		self.terminalState,
 		self.discretionaryData,
 		self.reservedForFutureUse20,
-		self.reservedForFutureUse21) = (None)*21
-		self.data = f.read(POSCheckServiceExtensionRecord.LENGTH)
+		self.reservedForFutureUse21) = tuple([None]*21)
+		self.data = f if type(f) == type("")  else f.read(POSCheckServiceExtensionRecord.LENGTH)
 		super(POSCheckServiceExtensionRecord, self).__init__()
         
 class DirectMarketingExtensionRecord(Record):
@@ -1073,8 +1074,8 @@ class DirectMarketingExtensionRecord(Record):
 		self.multipleClearingSequenceNumber,
 		self.multipleClearingSequenceCount,
 		self.extensionRecordIndicator,
-		self.reservedForFutureUse) = (None)*11
-		self.data = f.read(DirectMarketingExtensionRecord.LENGTH)
+		self.reservedForFutureUse) = tuple([None]*11)
+		self.data = f if type(f) == type("")  else f.read(DirectMarketingExtensionRecord.LENGTH)
 		super(DirectMarketingExtensionRecord, self).__init__()
         
 class ElectronicInvoiceTransactionData(Record):
@@ -1115,8 +1116,8 @@ class ElectronicInvoiceTransactionData(Record):
 		self.invoiceCreationDate,
 		self.invoiceCreationTime,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*9
-		self.data = f.read(ElectronicInvoiceTransactionData.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*9)
+		self.data = f if type(f) == type("")  else f.read(ElectronicInvoiceTransactionData.LENGTH)
 		super(ElectronicInvoiceTransactionData, self).__init__()
         
 class ElectronicInvoicePartyInformation(Record):
@@ -1160,8 +1161,8 @@ class ElectronicInvoicePartyInformation(Record):
 		self.partySupplementalDataDescription1,
 		self.partySupplementalDataDescription2,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*10
-		self.data = f.read(ElectronicInvoicePartyInformation.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*10)
+		self.data = f if type(f) == type("")  else f.read(ElectronicInvoicePartyInformation.LENGTH)
 		super(ElectronicInvoicePartyInformation, self).__init__()
         
 class EntertainmentTicketingExtensionRecord(Record):
@@ -1211,8 +1212,8 @@ class EntertainmentTicketingExtensionRecord(Record):
 		self.eventRegionCode,
 		self.eventCountryCode,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*12
-		self.data = f.read(EntertainmentTicketingExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*12)
+		self.data = f if type(f) == type("")  else f.read(EntertainmentTicketingExtensionRecord.LENGTH)
 		super(EntertainmentTicketingExtensionRecord, self).__init__()
         
 class FleetService1ExtensionRecord(Record):
@@ -1372,8 +1373,8 @@ class FleetService1ExtensionRecord(Record):
 		self.grossNonFuelPrice,
 		self.miscellaneousFuelTaxExemptionStatus,
 		self.miscellaneousNonFuelTaxExemption,
-		self.extensionRecordIndicator) = (None)*38
-		self.data = f.read(FleetService1ExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*38)
+		self.data = f if type(f) == type("")  else f.read(FleetService1ExtensionRecord.LENGTH)
 		super(FleetService1ExtensionRecord, self).__init__()
         
 class FleetService2ExtensionRecord(Record):
@@ -1522,8 +1523,8 @@ class FleetService2ExtensionRecord(Record):
 		self.reimbursementAttributeCode,
 		self.federalSalesTaxExemptionStatus,
 		self.federalSalesTax,
-		self.fleetNumber) = (None)*45
-		self.data = f.read(FleetService2ExtensionRecord.LENGTH)
+		self.fleetNumber) = tuple([None]*45)
+		self.data = f if type(f) == type("")  else f.read(FleetService2ExtensionRecord.LENGTH)
 		super(FleetService2ExtensionRecord, self).__init__()
         
 class GeneralExtensionRecord(Record):
@@ -1697,8 +1698,8 @@ class GeneralExtensionRecord(Record):
 		self.reservedForFutureUse35,
 		self.transitTransactionTypeIndicator,
 		self.transportationModeIndicator,
-		self.extensionRecordIndicator) = (None)*47
-		self.data = f.read(GeneralExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*47)
+		self.data = f if type(f) == type("")  else f.read(GeneralExtensionRecord.LENGTH)
 		super(GeneralExtensionRecord, self).__init__()
         
 class TokenExtensionRecord(Record):
@@ -1742,8 +1743,8 @@ class TokenExtensionRecord(Record):
 		self.basTokenIndicator,
 		self.requestorId,
 		self.reservedForFutureUse9,
-		self.extensionRecordIndicator10) = (None)*10
-		self.data = f.read(TokenExtensionRecord.LENGTH)
+		self.extensionRecordIndicator10) = tuple([None]*10)
+		self.data = f if type(f) == type("")  else f.read(TokenExtensionRecord.LENGTH)
 		super(TokenExtensionRecord, self).__init__()
         
 class InsuranceIndustryExtensionRecord(Record):
@@ -1793,8 +1794,8 @@ class InsuranceIndustryExtensionRecord(Record):
 		self.typeOfPolicy,
 		self.nameOfInsured,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*12
-		self.data = f.read(InsuranceIndustryExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*12)
+		self.data = f if type(f) == type("")  else f.read(InsuranceIndustryExtensionRecord.LENGTH)
 		super(InsuranceIndustryExtensionRecord, self).__init__()
         
 class LodgingExtensionRecord(Record):
@@ -1934,8 +1935,8 @@ class LodgingExtensionRecord(Record):
 		self.giftShopSign,
 		self.laundrySign,
 		self.otherServicesSign,
-		self.reservedForFutureUse37) = (None)*42
-		self.data = f.read(LodgingExtensionRecord.LENGTH)
+		self.reservedForFutureUse37) = tuple([None]*42)
+		self.data = f if type(f) == type("")  else f.read(LodgingExtensionRecord.LENGTH)
 		super(LodgingExtensionRecord, self).__init__()
         
 class MerchantDescriptionExtensionRecord(Record):
@@ -2004,8 +2005,8 @@ class MerchantDescriptionExtensionRecord(Record):
 		self.reservedForFutureUse10a3,
 		self.laneId,
 		self.reservedForFutureUse12,
-		self.extensionRecordIndicator) = (None)*17
-		self.data = f.read(MerchantDescriptionExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*17)
+		self.data = f if type(f) == type("")  else f.read(MerchantDescriptionExtensionRecord.LENGTH)
 		super(MerchantDescriptionExtensionRecord, self).__init__()
         
 class TaxExtensionRecord(Record):
@@ -2169,8 +2170,8 @@ class TaxExtensionRecord(Record):
 		self.taxTypeId6,
 		self.buyerRecipientName,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*42
-		self.data = f.read(TaxExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*42)
+		self.data = f if type(f) == type("")  else f.read(TaxExtensionRecord.LENGTH)
 		super(TaxExtensionRecord, self).__init__()
         
 class PurchasingCard1ExtensionRecord(Record):
@@ -2317,8 +2318,8 @@ class PurchasingCard1ExtensionRecord(Record):
 		self.taxTreatment,
 		self.vatTaxAmountFreightShipping,
 		self.discountAmountSignage,
-		self.reservedForFutureUse33) = (None)*42
-		self.data = f.read(PurchasingCard1ExtensionRecord.LENGTH)
+		self.reservedForFutureUse33) = tuple([None]*42)
+		self.data = f if type(f) == type("")  else f.read(PurchasingCard1ExtensionRecord.LENGTH)
 		super(PurchasingCard1ExtensionRecord, self).__init__()
         
 class PurchasingCard2ExtensionRecord(Record):
@@ -2461,8 +2462,8 @@ class PurchasingCard2ExtensionRecord(Record):
 		self.reservedForFutureUse33,
 		self.reservedForFutureUse34,
 		self.lineItemLevelDiscountTreatmentCode,
-		self.reservedForFutureUse36) = (None)*41
-		self.data = f.read(PurchasingCard2ExtensionRecord.LENGTH)
+		self.reservedForFutureUse36) = tuple([None]*41)
+		self.data = f if type(f) == type("")  else f.read(PurchasingCard2ExtensionRecord.LENGTH)
 		super(PurchasingCard2ExtensionRecord, self).__init__()
         
 class RestaurantExtensionRecord(Record):
@@ -2518,8 +2519,8 @@ class RestaurantExtensionRecord(Record):
 		self.tipAmount,
 		self.reservedForFutureUse12,
 		self.approvalCode,
-		self.reservedForFutureUse14) = (None)*14
-		self.data = f.read(RestaurantExtensionRecord.LENGTH)
+		self.reservedForFutureUse14) = tuple([None]*14)
+		self.data = f if type(f) == type("")  else f.read(RestaurantExtensionRecord.LENGTH)
 		super(RestaurantExtensionRecord, self).__init__()
         
 class RetailExtensionRecord(Record):
@@ -2648,8 +2649,8 @@ class RetailExtensionRecord(Record):
 		self.digitReferenceNumber23,
 		self.postalCode,
 		self.reservedForFutureUse28,
-		self.extensionRecordIndicator) = (None)*33
-		self.data = f.read(RetailExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*33)
+		self.data = f if type(f) == type("")  else f.read(RetailExtensionRecord.LENGTH)
 		super(RetailExtensionRecord, self).__init__()
         
 class MasterCardShippingServicesExtensionRecordFormat1(Record):
@@ -2738,8 +2739,8 @@ class MasterCardShippingServicesExtensionRecordFormat1(Record):
 		self.deliveryPartyState,
 		self.deliveryPartyCountry,
 		self.reservedForFutureUse24,
-		self.extensionRecordIndicator) = (None)*25
-		self.data = f.read(MasterCardShippingServicesExtensionRecordFormat1.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*25)
+		self.data = f if type(f) == type("")  else f.read(MasterCardShippingServicesExtensionRecordFormat1.LENGTH)
 		super(MasterCardShippingServicesExtensionRecordFormat1, self).__init__()
         
 class MasterCardShippingServicesExtensionRecordFormat2(Record):
@@ -2803,8 +2804,8 @@ class MasterCardShippingServicesExtensionRecordFormat2(Record):
 		self.shippingPartyContact,
 		self.deliveryPartyContact,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*11
-		self.data = f.read(MasterCardShippingServicesExtensionRecordFormat2.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*11)
+		self.data = f if type(f) == type("")  else f.read(MasterCardShippingServicesExtensionRecordFormat2.LENGTH)
 		super(MasterCardShippingServicesExtensionRecordFormat2, self).__init__()
         
 class TelephonyBillingSummary(Record):
@@ -2878,8 +2879,8 @@ class TelephonyBillingSummary(Record):
 		self.detailTaxAmount1,
 		self.detailTaxSignDC1,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*20
-		self.data = f.read(TelephonyBillingSummary.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*20)
+		self.data = f if type(f) == type("")  else f.read(TelephonyBillingSummary.LENGTH)
 		super(TelephonyBillingSummary, self).__init__()
         
 class TelephonyBillingDetail(Record):
@@ -2944,8 +2945,8 @@ class TelephonyBillingDetail(Record):
 		self.callUsageAmount,
 		self.callUsageAmountSign,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*17
-		self.data = f.read(TelephonyBillingDetail.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*17)
+		self.data = f if type(f) == type("")  else f.read(TelephonyBillingDetail.LENGTH)
 		super(TelephonyBillingDetail, self).__init__()
         
 class MasterCardTemporaryHelpServicesExtensionRecordFormat1(Record):
@@ -3025,8 +3026,8 @@ class MasterCardTemporaryHelpServicesExtensionRecordFormat1(Record):
 		self.discountAmount,
 		self.subtotalAmount,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*22
-		self.data = f.read(MasterCardTemporaryHelpServicesExtensionRecordFormat1.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*22)
+		self.data = f if type(f) == type("")  else f.read(MasterCardTemporaryHelpServicesExtensionRecordFormat1.LENGTH)
 		super(MasterCardTemporaryHelpServicesExtensionRecordFormat1, self).__init__()
         
 class MasterCardTemporaryHelpServicesExtensionRecordFormat2(Record):
@@ -3067,8 +3068,8 @@ class MasterCardTemporaryHelpServicesExtensionRecordFormat2(Record):
 		self.miscellaneousExpenseDescription2,
 		self.miscellaneousExpenseAmount2,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*9
-		self.data = f.read(MasterCardTemporaryHelpServicesExtensionRecordFormat2.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*9)
+		self.data = f if type(f) == type("")  else f.read(MasterCardTemporaryHelpServicesExtensionRecordFormat2.LENGTH)
 		super(MasterCardTemporaryHelpServicesExtensionRecordFormat2, self).__init__()
         
 class ChipDetailExtensionRecord1(Record):
@@ -3147,10 +3148,89 @@ class ChipDetailExtensionRecord1(Record):
 		self.panPrimaryAccountNumberSequence,
 		self.cryptogramInformationCode,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*19
-		self.data = f.read(ChipDetailExtensionRecord1.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*19)
+		self.data = f if type(f) == type("")  else f.read(ChipDetailExtensionRecord1.LENGTH)
 		super(ChipDetailExtensionRecord1, self).__init__()
-        
+
+#hand coded from the draft256 document <LOOK HERE FOR ERRORS>
+class ChipDetailExtensionRecord2(Record):
+	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nNumber that identifies the position of the \r\nrecord within the file.'),
+			('2', '8-11', '4', 'N', 'TSYS Acquiring Solutions', 'Transaction Code\r\nThe transaction code from the Financial \r\nrecord, field 2.'),
+			('3', '12-16', '5', 'N', 'TSYS Acquiring Solutions', 'Format Indicator\r\nCode that identifies this record. Must be \r\nEMVC2.'),
+			('4', '17-22', '6', 'AN', 'VMCAPNS', 'Cardholder Verification Method Results\r\nA code indicating the process used to verify the identity of the cardholder. Display hexadecimal format.'),
+			('5', '23-28', '6', 'AN', 'VMCAPNS', 'Terminal Capability Code\r\nIndicates teh terminals chip reading capability, display hexadecimal format'),
+			('6', '29-30', '2', 'AN', 'VMCAPNS', 'Terminal Type Code\r\nIdentifies the terminals env, communications capability and operational control, display hexadecimal format'),
+			('7', '31-46', '16', 'N', 'VMCAPNS', 'Interface Device Serial Number\r\nA unique permanent number assigned by the manufacturer and used to track point of sale interface device(eg terminal).'),
+			('8', '47-48', '2', 'AN', 'VMCAPNS', 'Transaction Category Code\r\nA mastercard code that indicates the type of transaction and used for the risk managment service'),
+			('9', '49-80', '32', 'AN', 'VMCAPNS', 'Dedicated File Name\r\nIdentifies the mastercard m/chip application. Should match EMVC1'),
+			('10', '81-84', '4', 'AN', 'VMCAPNS', 'Terminal Application Version Number\r\n Indicates the version, release and modification umber of the applications supported by the terminal'),
+			('11', '85-116', '32', 'AN', 'VMCAPNS', 'Issuer Authentication Information\r\n Information send to the chip that verifies card issuer'),
+			('12', '117-124', '8', 'AN', 'VMCAPNS', 'Transaction Sequence Number\r\n Sequential number of the transaciton based on a coutner within the terminal'),
+			('13', '125-132', '8', 'AN', 'VMCAPNS', 'Form Factor Identifier\r\nA code identifyin the physical form of the contact-less chip device'),
+			('14', '133-182', '50', 'AN', 'VMCAPNS', 'Issuer Script Results\r\nThe update command the card issuer sends in an authorization response. This command updates the chip and records the success or fdailure of the update'),
+			('15', '183-186', '4', 'AN', 'VMCAPNS', 'Application Usage Control Parameters\r\nCard issuer values defining circumstances when authorization responses sent'),
+			('16', '187-218', '32', 'AN', 'VMCAPNS', 'Application Identifier Terminal\r\nIdentifies the application used by the terminal'),
+			('17', '219-251', '33', 'AN', 'TSYS Acquiring Solutions', 'Reserved for future use'),
+			('18', '252-256', '5', 'AN', 'TSYS Acquiring Solutions', 'Extension Record Indicator\r\nIndicates if another extension record follows'))
+
+	ROW = lambda row, RECORD=RECORD: RECORD[row]
+	COLUMN = lambda column, RECORD=RECORD: [data[column] for data in RECORD]
+	AT = lambda row,column, RECORD=RECORD: RECORD[row][column]
+
+	@staticmethod
+	def get_transactionCategoryCode(value):
+		return {
+			"Z":"Automated Teller Machine",
+			"U":"Cardholder Activated Terminal",
+			"R":"Point of Service Terminal"
+		}
+	
+	restrictions = {
+		"sequenceNumber": lambda value: restrict(value).toMatch(r"[0-9]{7}"),
+		"transactionCode": None,
+		"formatIndicator": lambda value: restrict(value).toEqual("EMVC2"),
+		"cardholderVerificationMethodResults":None,
+		"terminalCapabilityCode":None,
+		"terminalTypeCode":None,
+		"interfaceDeviceSerialNumber":None,
+		"transactionCategoryCode":lambda value: restrict(value).toBeIn("ZUR"),
+		"dedicatedFileName":None,
+		"terminalApplicationVersionNumber":None,
+		"issuerAuthenticationInformation":None,
+		"transactionSequenceNumber":None,
+		"formFactorIdentifier":None,
+		"issuerScriptResults":None,
+		"applicationUsageControlParameters":None,
+		"applicationIdentifierTerminal":None,
+		"reservedForFutureUse17":None,
+		"extensionRecordIndicator": None
+	}
+
+	LENGTH = 256
+
+	def __init__(self,f):
+		(self.sequenceNumber,
+		self.transactionCode,
+		self.formatIndicator,
+		self.cardholderVerificationMethodResults,
+		self.terminalCapabilityCode,
+		self.terminalTypeCode,
+		self.interfaceDeviceSerialNumber,
+		self.transactionCategoryCode,
+		self.dedicatedFileName,
+		self.terminalApplicationVersionNumber,
+		self.issuerAuthenticationInformation,
+		self.transactionSequenceNumber,
+		self.formFactorIdentifier,
+		self.issuerScriptResults,
+		self.applicationUsageControlParameters,
+		self.applicationIdentifierTerminal,
+		self.reservedForFutureUse17,
+		self.extensionRecordIndicator) = tuple([None]*18)
+		self.data = f if type(f) == type("")  else f.read(ChipDetailExtensionRecord2.LENGTH)
+		super(ChipDetailExtensionRecord2, self).__init__()
+
+
 class TransactionExtensionRecord(Record):
 	RECORD = (('1', '1-7', '7', 'N', 'TSYS Acquiring Solutions', 'Sequence Number\r\nThe Sequence Number identifies the \r\nrecords position within the transmission \r\nfile.'),
 			('2', '8-11', '4', 'N', 'TSYS Acquiring Solutions', 'Transaction Code\r\nThe Transaction code identifies the type of \r\nrecord being transmitted.'),
@@ -3183,8 +3263,8 @@ class TransactionExtensionRecord(Record):
 		self.detailMerchantName,
 		self.merchantSoftDescriptor,
 		self.reservedForFutureUse,
-		self.extensionRecordIndicator) = (None)*7
-		self.data = f.read(TransactionExtensionRecord.LENGTH)
+		self.extensionRecordIndicator) = tuple([None]*7)
+		self.data = f if type(f) == type("")  else f.read(TransactionExtensionRecord.LENGTH)
 		super(TransactionExtensionRecord, self).__init__()
         
 class BatchTrailer(Record):
@@ -3261,8 +3341,8 @@ class BatchTrailer(Record):
 		self.expandedAmountOfDebits,
 		self.expandedAmountOfCredits,
 		self.expandedAmountOfPayments,
-		self.reservedForFutureUse21) = (None)*21
-		self.data = f.read(BatchTrailer.LENGTH)
+		self.reservedForFutureUse21) = tuple([None]*21)
+		self.data = f if type(f) == type("")  else f.read(BatchTrailer.LENGTH)
 		super(BatchTrailer, self).__init__()
         
 class TransmissionTrailer(Record):
@@ -3315,6 +3395,70 @@ class TransmissionTrailer(Record):
 		self.expandedAmountOfCredits,
 		self.reservedForFutureUse11,
 		self.expandedAmountOfPayments,
-		self.reservedForFutureUse13) = (None)*13
-		self.data = f.read(TransmissionTrailer.LENGTH)
+		self.reservedForFutureUse13) = tuple([None]*13)
+		self.data = f if type(f) == type("")  else f.read(TransmissionTrailer.LENGTH)
 		super(TransmissionTrailer, self).__init__()
+
+#missing Temp1, Temp2, Ship1, Ship2, for visa...keys are the same?...
+RecordMap = {
+	"TMHDR": TransmissionHeader,
+	"BCHDR": BatchHeader,
+	"MCHDR": MerchantHeader,
+	"TRHDR": FinancialRecord,
+	"AIRL1": AirlinePassengerTransport1ExtensionRecord,
+	"AIRL2": AirlinePassengerTransport2ExtensionRecord,
+	"CARNT": CarRentalExtensionRecord,
+	"OPTIN": LodgingOptionalExtensionRecord,
+	"CHECK": POSCheckServiceExtensionRecord,
+	"DIRCT": DirectMarketingExtensionRecord,
+	"EINTR": ElectronicInvoiceTransactionData,
+	"EINPR": ElectronicInvoicePartyInformation,
+	"ENT1*": EntertainmentTicketingExtensionRecord,
+	"FLEET": FleetService1ExtensionRecord,
+	"FLEE2": FleetService2ExtensionRecord,
+	"EXT**": GeneralExtensionRecord,
+	"TOKEN": TokenExtensionRecord,
+	"INS1*": InsuranceIndustryExtensionRecord,
+	"LODGE": LodgingExtensionRecord,
+	"MERCH": MerchantDescriptionExtensionRecord,
+	"TAX**": TaxExtensionRecord,
+	"PURC1": PurchasingCard1ExtensionRecord,
+	"PURC2": PurchasingCard2ExtensionRecord,
+	"AMEXR": RestaurantExtensionRecord,
+	"RETAL": RetailExtensionRecord,
+	"SHIP1": MasterCardShippingServicesExtensionRecordFormat1,
+	"SHIP2": MasterCardShippingServicesExtensionRecordFormat2,
+	"TBSUM": TelephonyBillingSummary,
+	"TBDET": TelephonyBillingDetail,
+	"TEMP1": MasterCardTemporaryHelpServicesExtensionRecordFormat1,
+	"TEMP2": MasterCardTemporaryHelpServicesExtensionRecordFormat2,
+	"EMVC1": ChipDetailExtensionRecord1,
+	"EMVC2": ChipDetailExtensionRecord2,
+	"TADD*": TransactionExtensionRecord,
+	"BTAIL": BatchTrailer,
+	"TTAIL": TransmissionTrailer
+	}
+
+class Parser:
+    def __init__(self):
+        self.f = f #convert this to asyncio over websockets
+        self.records = {}
+    
+    def _getRecordClass(self,record):
+        transactionCode = record[7:11]
+        formatIndicator = record[11:16]
+
+        tc_classes = [i for i in RecordMap.values() if "transactionCode" in i.restrictions and i.restrictions["transactionCode"]]
+        tc_class = list(filter(lambda cls: not cls.restrictions["transactionCode"](transactionCode).hasFailed(), tc_classes))
+
+        if not formatIndicator in RecordMap and not tc_class:
+            raise ValueError(f"Neither transaction code [{transactionCode}] nor format indicator [{formatIndicator}] matched a Draft256 record type")
+
+        return RecordMap[formatIndicator] if formatIndicator in RecordMap else tc_class[0]
+
+    def parse(self):
+        raw_data = self.f.read()
+        for i in range(0,len(raw_data),256):
+            record = raw_data[i:i+256]
+            self.records[record[:7]] = self._getRecordClass(record)(record)
+        self._set_childen(self.records["0000000"])
